@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Hidranti</title>
+<title>Hidrantko</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -363,9 +363,12 @@
 <div id="app">
 
   <div id="topbar">
-    <div>
-      <div class="title">Hidranti</div>
-      <div class="tag"><span class="status-dot" id="status-dot"></span><span id="status-text">Iščem lokacijo …</span></div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHwAAABgCAYAAADfChZeAAAaO0lEQVR4nO19a3Bcx3Xmd7r7Dt4gXgQpWVKstSJtIIsPDPGQ7fWIkqxYtVUppWpH3s1WKqWVKlmvs3Y2iiWVUxsQcUWxVZZlr2yvU6lV7MTJyhynnN14vUlZEjmWSiJAgS+JtCVTsiSvHiDxBkgAc7v72x/3DgiSA2AGBMkBjO8XMLfvvd393XO6+/Q5p2Uk2f07CtzpiR0EWgkEGpgUkTcV0Oc9ntpQgazs2zcNAHtSKXNLNusEIEoAAUE6rSST8Sjx3jUMYTqtkMn45fTn3lRK78xmLQCwu7tqfBYppXC7B7pI/ooD6gQIBTihBC96yB4Zau/6ZnOQ+L0JG+YfBAXAiMCIYNZ7OPIVLXgyhH2iaWDgLQBgOq0lk3Er3AHrKALz+34kmbwmgPkPjvi3WuSGCqVgSVgSHoDE99SbAMNh7i8EAIbbO5+q1ea2SWutiBhGvBMkIaKqlJJqpTDl3BiIrw+56S9de/jwGNNpvdTXyfw7k0kzTP255oR6BPv2zSCqzC+lpM/1SXd35XDOP9As7mEMDFhg8T6ZpyXdz7dubWjRVX8EwadqtW447T2mvSdIDxEBIAIISVtnjJly9unmA/23KwAwXj6Z825aiygClKiwEhEtgEx774fD0DqiocboP95oql4cTXbeJZmME4CMlEJBZNJpJQCHvXmsubJ614lZf68ARCqlV7YbVxFSKS0AT8z6e5srq3cNe/OYAMyk0wv2IwElACWTcaPJzrs2mqoXa4z+Y0c0DIehnfbeCyAxZ0oAIUAtonLeTRsvnwQAYSplJJu1J9o7e1pMsGs4DJ0SKUgGI6l3lUqbQAQzzn19cHL4/uuPH58tpOLzv422d95apczTOfocgNNa+5uq+/vfRvRh+ZXsy3JHLBw83dn5PufUSwCqE6IS097e1nig/5nF+vHV666r2FTX/Gil1p8KScx4ZxELZaF3edI1B4E+GeZ6Nx3cv4uplFHIZh0BxZmqR8es/UWl0ooLkBB/QWaG3k866+oD86krNrQ883YyeY1kMm5PKmXOuqGtjQDgRR5UAs56j2qlG6YtvhFL+YJf9JpFKqUE4LTFN6qVbpj1HkpAL/IggLk+y2NPKmUkk3FvJ5PXXLGh5Zn6wHxq0lk3Q+9FxCxENgFfqbQas/YXmK3+EgGFaLIN5KV8qL3zD5p08NiwXVjK58OTtsEYM0v/1umcvav1yIsH88+KVZAf3rHjavHqVYFUulhDNJrAnLThf9x8sP8v8uVXoCvLHvm2vre98/c2muCboza0ENEaEIIzVP765hdf/EW+7/Ll374p2b6hIvh+hahrxqy1SsQs9S5PumYT6BEX/peWA/1fyT8rkrBIysWEiW+PWjuUUEqziAmVEjHj1loFuaYmME8Pbu3+sGSzdk8qZZBORx+T0x212lQ60gkgENFTzrlapR8b3Na5VbJZy3R6zY/nTKe1ZLN2cFvn1lqlH5tyzuXVsSNdrTaVdLoDAJBOy56YoMGt3R9uSARPKcg140WSTYAJpfSotUMmTHybgCCbdUA82RKAe1Mp3fDSc6MU/H2d0gBZ1JJLRMwp5xyBxhojP3yvvbN7ZzZr3+g/EQCAEt5gROJ6RMNCjl6UoKpCqd2jW7c2IJPxi038VjsIKGQyfnTr1oYKpXYrQVWOXuapYxoRKOENAPBG/4lgZzZr32vv7K418kMCjaecc1IE2dHT6OqUBgV/3/DSc6N740kiMK+Tb2ltJSPVsnuGHhApmgAlome8dxDU10L9YGh7169d+2Z2JmqsbCxQXp1yztVqdT101e5odtqDtUh61KYeZNJpBV21u1ar608551SB/s331bVvZmfe2dbZVgv1AwrqZ7wvaoidg4iaoQfB3QTkltbWOW195qXxetramb7Tzr1bES/Rin+H6GnnnFbSHCj873e33NxKQBxQzQJPUSJ61Fq7QeuP3f76W38t6PXo6TmzRl0DICDo6YGg19/++lt/vUHrj41Gavk88kjAAdUE5N0tN7fWaPlfWknzdCTZRZNNgBUi6rRz71o70ycAEVk3AcwjXAAyndZXHDlySiB9lUoBZElLJhWNz7ZWmesSxv+dANTCWVmAQiViRmxoG7T5rbH27iekt9fHlV71kp5vg/T2+rH27icatPmtERsuOAaLAFo4KwATxv9drTLXTTlX8ONY/MX0lUpBIH1XHDlyiun0nDoHzu3YEycEAEShT88bd0tBnsSmILhtONl9Hz1+JosIrYiYkTC09UbfM9re/WSmrS0QwJ+3xFtF2JNKGQH80ba2YLS9+8l6o+8ZCUO72BgsENDjZ8PJ7vuaguC2xT6OJUAtAlHoAzDHaR5nEz6n6/lS6ImF1nhLQUT0pLWe9I8owVVTzlEWmRPkSd+g9Sd+vbL+n3/e0bF5ZzZruQpJZypldmaz9ucdHZuvqaz/5w1af2JJskXUlHNUgqtI/8iktb4UNX7WswAJPQHwJQDzOJ27Pq+y+bXz1o4bRauXLmQ89QATIhLSv0PKRi0IllIX+XX9jOcb097+TuvB/T/mmZVEWVvk5tfzxPaOj1Yp8+1KJe8vZt0sABwRivBkIOrKHEl1AX0vAOn8Tc2H9x/Nc5q/dq7UEQASNCcdMWlEUMrEbT4UICFJLepKVQTZQDQcjFnrBHh/leinJ5JdDwng80aI5dTjUoCxChfATyS7HqoS/bQA7x+z1hW5boYSBFrUleEFkM14eeeIyQTNyXmPn0NBNVs7nphQggmFC9vRio0KJd2vRPS0dz4H6lpt/nwq2f3U0LbOtth6J7vLyEizO53WBESyWTu0rbNtKtn9VK02f54D9bR3vtQJlyO53GEUiLhSAJRgonY8MVGoTOFx9c3sLMBJFUn4BWE5DVDRkhDDYegSSt2W0Kp/vL37sxlA3Z3JOMYdfYFVWzYYOS7ouzMZlwHUeHv3ZxNa9SeUum04DB3jNpT63AshO64XlAgATkYcno+zKpWXZgFIYkbNPebSQwBRInrCWufImjqtH/l4svu54e0dN+e3ZXfj0kv7bkTLHMlk3PD2jps/nux+rk7rRxxZMxGp8AV3ry4+GG3FETPzuZxfooC1J6ps7BoD4eV1UhAR7QCO2NAmRHUnlH52vL3ri28nk9V3o8AO3UXEnlTK3I2MezuZrB5v7/piQulnE6K6R2xoHcDlzqxXCkJQEHEHoKARazG1UzbeKPlt2UlnfY5UdcY8sAHBC4PJro/szGYte3rUxVTxBIQ9PWpnNmsHk10f2YDghTpjHsiRatLZRbcpLxMW5G4xwsupAQDmxkUZDkOrRLZUQ/aOJbselN5ev5TnzXIx52nS2+vHkl0PVkP2KpEtw2FoEQ075WgVXJC78yqb1/lEtJTiYmayywQV7dD5HKk2aPOF8WTX7ne3bKkRwO8GVkyt7ga0AP7dLVtqxpNduzdo84UcqU4555dpBbuooEAiZ0QEQOEV1rmEzyNXEjz3pzLCvJm8rdcmXRNUP318y82tdwOOPT0XLHXs6VF3A+74lptba4Lqp+u1SQ+HoV3uDPzSIL+qksRZPy70DyMbPplO65HX3vxJpdK/GjvHlWkDI5AIG4wOTnn30tAsPvaBl/sGz7UwlfS8+N7XPti1qaUCP6pR+qYx60KRSHLKFQR8lVJqxrufNX3gV35NMhmX5zRfpiCRR48e1SQqSjOZXD6IIBi11tYofVNThfxgsC1VCxSepS6F/D2Dbanapgr5QY3SN41aa8ud7DxIgETF0aNHCw5tBQm/sarKCCTg3FKu/KFEzKi1tkHrHbpq5m8E8HsjV+hS6i+xd4jXVTN/06D1jtEi3YrKBEIQAglurKoqWOeChI9Zm4DArBIBn4MSMcOhDZt1cNfgto6Hdkb+ckUPR0yno6XXto6HmnVw13Bow1VENoA5a4sZszZR6HrBzpiWuiA/S191EJgxG7oarT8/muxul0zGFWOR243Yhz7Z3V6j9efHbOggWFVkA/mQIQTTUldwCCpIuA5mtRBqNRIeb9ggEGWc999kOq3TPW3E4qpd0j1tZDqtnfffDEQZx+X7A1xOEIAQSgezS4/hu+IGKhsoCMt6Zr4YRERPOmubgqBj5PU37pHeXr9nkdCmPamUlt5eP/L6G/c0BUHHpLP2cptJLwhCpWyggDOc5rHqVFbRiDxjCa96BttST7Zms6fOXaIA8aw8m3WDbala+JmeU3AsxWN3teFcCScAuIRzoJS1h8lSEEDNeu8aA3OVrpxZOIAx9tnWlTP3NgbmqlnvXbnbHZYExbuEc8AZTvMo2DDrvSVoV90Adi5E1GnvSeIzTKUq8xE2+ct56WYqVUniM6e9X/XSLQAIWut9wfCtgo17n/fTApm9UI+Xyw0B1IxzvsHoa0cmZ3/jPCmPpXtkcvY3Goy+dsa5srcqLoa8x4tAZt/n/XShMgUblxkYmIVwaiU8XsoBkfGJvwsAuOWWM0NV/DfB312u7145Ie/xQuFUZmCgoMfLeVo7P7EZ3t65r0brrlNx0NtFr+3FAwFAi9icch9s3b//1bM8TDs6rk94/bIj8xPY1TuSka5Ga33Kub7mg/3dhSap50t43jIl8p5eGxIuJF291oGyKg0ASKVUPjZdWZWu1zpgFDy5eslGxKwWAUTeA3CGy3k4n/A4UsGTb2osL/qk3CCAzHoPCH5zLnQ2P4ET/Oas96vSyFIA1JFH4hsAzos6ARaZoGglP131TMegiD7tPQ2wdSiZvEEACsChZPIGA2w97T25uoetORCAKHlloevnET4wNRV9FU6OlRo2XK4QACRdnTFGYO4487u5o84YwyhZwepHHCZsnRwD5nE5D+eRuWNgICQgs15+MuPcpCkxbLiMIZ4EPOYIh8cdnqtnC3gxxFEnatq5SeflJwRkx8BAeG658wgf2tbZJgA3H7ljSERerhQFKTFsuCwhoqa9B4FuJpPVTCarCXRP+zWixUhfKQpK5OXNR+4YEoBD2zrbzi0319B87JYoue9ke+dnBb3eEX0VSrgWJFwAyZG+TuvmMUncMCaJG+q0bs6Rfi1M2Agw5mqfoNefbO/8rCi5DzjDLVDIa5U82BwkHnlv247bNfBXISmFyq1KkL5CKXjvO7z3HRXLSHpQxlAhKUJ8671tO25vDhKPCHnwvEJzf2WzHgA8MXDKWlunzT9a8sZxa1+u1gvnbltlEE+C5EdJfnQNjd++Wms1bu3LlryxTpt/PGWt9cQAgDlugbMllwDQnJs6Pkv/RqBUpVZ4Qok0hGukYyCiTnkHgdwqkFtPebcmxm9EodlQIg1a4YlAqcpZ+jeac1PH4+vne60KwD2plJFjx3IK8owABBEEIleFq9T741zE4ziUyBVK5IrcGmpXSCIQuQpEEG2iyDNy7FguTj9S2E05n95JhE9aUgggF8UsrxkIAAfSYe21K8coGN+SIsIngTOczi931v8EgFRKD03MHKrRqu30EvlZ1lE+IOmrtZZTzh9rqa/cNpdbdZFABCKV0pLNWqXkKxVKyVpYkv2yIFqaKVFKviLZrI33/pfYLctmXQ+gJmorvjNqw+PVWiuunaXLmkUs3WrUhscnaiu+0xNnTz63XMHo0V3ptFybzc5oqAcSIr90Oc1XIwTwCRHRUA9cm83O7Eqnz9sLBxYwqEicR6XxwL7vj1v3Dw0mMK7IZLvruPRwpGswgRm37h8aD+z7/mLn0Sw4USWgdgH4Tx0drRVOH9KC1tloxr4+gSsjEPAVIuKIE7PabfvG/v0ndgEL5rVbODsi4Hel07Jp//73Zjx/W0epBP36JK58QIAG8FpEZjx/e9P+/e/FqnzBIXhRaZVMxjGVMpsP9f1o0tlP1xtjFGHXSb/8IEBF2HpjzKSzn958qO9HjI/LWOy+JdWzxDlPNx3c//iwDf+sMTCBkG6d9MsHAhTSNQYmGLbhn206uP/xYo8SKcrYREDy6/Oh9s4vNJngwVFrXZwpYS0ZrMoejNyzfKMxesSGX2w50P8QUymDIk+LLGoCJgCRzTqm07rlQP9DYzb8XL3WOhBZN8xcQhBgICL1WusxG36u5UD/Q0yndbFkAyVKJ4G5k/FObO/6RJWS/27Jhti/d13SLyIIUAMwImPTnp9sPdj33WJOhjwXJS2xBODcWWTa7ScYykLHHaxjxSEiIBh67fYDANraWGooWEls9cRr83eSyaYaBgcqlbp60llfvmms1hY86eu0UTPe/+KUhO1XDgyM7ALQW4IltCSibozXeAnqxzcYffWks3ad7EsHJaImnbUbjL46Qf24AP7G+Hy4YlF04by5bqS9819VKf3jUyWetrOOlQPjGLJp7z7adKD/2VKO9i5ZOgm530g+w+M6LhNoREjI/aXeWPQ6XACe3P6hKxXcz5SS6gvN3r+O5YMAtYh4z9Me+lc3Hnz+nUKRooVQnITHUYhK8cP1Rle7KC3GOtmXCQKI897VG12tFD8MoGCkaCEUR/hcRKnbutzzzNax4qAWgafbCqBgpGghFEX43rnCcrW/mJno11E0BNHWpYJcDZzhaCkURfic5yNZty7c5QTGnJzvnboQSp2l23X5LicIACy5QzYfJY3hFAxHaaHWcbmRzyVKwTCAlR3D8xDg9XXTefkgPnH+9VLuKY7weHyw4JGc98Xft46LCZXzHhY8AuC8Q2UXQkmGl3e2fWRjhYTHtZJ6u254uWyIsz2I85yYZXDdlYeeO7mihhcByB6o+MEvVCvFNRRXvfpA+mqlSOCFKw89d5I90VFbxdxavGrem8qX/a5GZExfLWB8FMhyr5cbCEBDBMB3AcznZkkUv1sWq4zRrVsbvK54NRDVshrCbaPOiRLWxfU973pCBI7EasjMR4AJEYT0Q8rNXt94+PBYseocKEHC8/HjjYcPj4Hyl3VaC8o/GoWBCBw4lqM/XhEppvlDka8QYY7+uAPHgtVgNiZd1Pfyl42HD4+dG/+9FEr3aQMw2NXVmgjxUy1Sb6PsEGU5aydpm4PADFn7NSX4v03a/J/hMLQSH1yTvz7i7L/2xJ0txvz+/OtlCB8dCM+JXIB/uamv7wRQWsbrkn3a9qZSenNf36ADH67XWvnynbwx8hBxIUR9vXmg74fD1r5ao43xROiJsEYbM2ztq80DfT+sEPX1SefC2IOnLKXck75ea+XAhzf39Q3GR26VVNeSJfOWbNYRPaplZuqrIzY8Uqu1YRmqdpKuwRg16/23Ng688FMCosD7HL3boHWwQevA0TsF3kdA6gde+Oms999qMEaVa3tqtTYjNjzSMjP1VaJH3VIgHHgpLOcU+ygtyLFjOe/9fY60cdblcpIKHyilJkI7DphdeffqpgP9z0658M4c/Y9z9D+ecuGdTQf6n0U6HR9HbXZNhHY8UEqhjEKkY4cHONJ67++TY8dywPIOL1j2pDTvR3VyW9f9LQnzpZHQhiiT4xpJ2iYTmJM29+lNB/c/nq8rC5xHmv8tX2Zwe8d/3mgS/23EltFYToRNgQkGc/aPNh/qe7QUH7ZzsezJVj7QcOOhvkeHbfidpsAEJM7L7Xmp4UlXb4wZsfbZ1oP7v5Z31geiiNjd6bQmoAio3em0nvsAMhnPdFq3Htz/tRFrn603xvgyUO2MyR624Xc2H+p7tJiAwcVwQctOApJBWqXbjurRqrp/alBm54i1l+0UXgI+EIEippyo9oaB518jepSgtyj1nC87lvzQBzT9AS+ojVOWXZZVCImwyZhgzNs9jdOTH88cu9GlUVqkybm4oIYIwKPIUI4dy3nNuya8faHJXB5Jj8NnfZVS6rT39zYMPP8a02ldLNkAIOj1TKd1w8Dzr532/t4qpZTi5YmJz5M94e0LXvMuOXYsdxSZkiNNzsUFf7m9gCd6VEt//4SHvXPCub3NgQlAhJeqowhACNsYBGYsDP9k06H+7y1X9eWHqk2H+r83FoZ/0hgERqKY+EsCRgkRw+bABBPO7fWwd7b0908QPaqUCJOFsGKWxPzk59XrPl6xsX70rxqM+XfD1pIkL2Z0Sj5WuikIzIgLv9o80P8Hcay0w/I/OGEcHj2c7PxKkw4+MxKGliL6YpqSPelFRJqNkTFr/+fJicZ7rj/+T7OFJpvLxYpWfn7FRtq7P5cQfF5FR0JauQid5UmvRdCojRp14ZebDvTfv5yIykKYHyk70t75aKMO/nDUWe+i1J0r+gETYBxNYjzpc8R/bTqw7+H42oqRDazwZEQiR0ohelTTgX0Pn3a41ZMvtwSB0RAhuSLpQgjQk7Zaa5VQSkasvX8lyY7bwvzMvelA//0j1t6fUEqqI+viirWDpNUQaQkC48mXTzvc2nRg38NEj4o3RVbUHrDiqlYACnr9nlTKtB7alx1H2DXh7J8akYnGIDBG8sTTo8ROI+AZGXqkJQgMyVemvbu9+WDfl/Nr05Ug+6y2xCnMmg/2fXnau9tJvtISBEbPtaNkQkjQk7RGROI+mZhw9k/HEXa1HtqXjTZEelfkwy3QpouH+QaCweSHPlAJ/4cC/Ps6rTfMeuK0d4ht8UQUaC7z1X4sRQRJiOgqpVCtFCadnSTU1wa1+8L1/f0Te1Ips7OI/CYXgvw7Xu3srN/k9EMC//t12tSd9h7T3gOkW7INgCgRVa00KpRg0rlxAn87A/XlTQPPv3Zun10MXPTt3/ljIQAMdXZeVeFUmuS/8UB7pdaVQiAEoz3paPcNgmgP24hAi2DWe3jyFYFkvOP/aDzc9wZw8TvorLbMe9fo1q73Ky33EkwrkRsqlIIjYeM25EVTx/UPIKAAM87NKOCAiHxvVvtMS3///8s/e6WGo8Vwyfb7CSik0zKfnMkdN38QQMrSf4hEG8ArPLBBKBrCGQAjWtTrQvQr4dOjgTx3zb5900AkcbeUkNtkBdshe1Mpndcob3V3VzWG/Iin3EZBp6P/FwCaQKmk0ClgHJB3RXDMiHoeQLbuxRdennteRDQvVXrT/w+hBMYx/BGsVgAAAABJRU5ErkJggg==" alt="Hidrantko" style="height:28px; width:auto; flex-shrink:0;">
+      <div>
+        <div class="title">Hidrantko</div>
+        <div class="tag"><span class="status-dot" id="status-dot"></span><span id="status-text">Iščem lokacijo …</span></div>
+      </div>
     </div>
     <div style="display:flex; flex-direction:row; align-items:center; gap:6px; flex-shrink:0;">
       <button id="set-location-btn">Ročna lokacija</button>
@@ -845,14 +848,20 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
     reportDbError('registracija uporabnika', error);
   }
 
-  async function updateUserRow(u){
-    const { error } = await sb.from('app_users').update(userToRow(u)).eq('username', u.username);
-    reportDbError('posodabljanje uporabnika', error);
-  }
-
-  async function deleteUserRow(username){
-    const { error } = await sb.from('app_users').delete().eq('username', username);
-    reportDbError('brisanje uporabnika', error);
+  async function callAdminAction(action, targetUsername, pin){
+    try{
+      const res = await fetch(SUPABASE_URL + '/functions/v1/admin-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_KEY
+        },
+        body: JSON.stringify({ action, targetUsername, pin })
+      });
+      return await res.json();
+    }catch(e){
+      return { success: false, error: e.message };
+    }
   }
 
   function renderHydrantMarkers(){
@@ -938,8 +947,15 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
     hideBanner();
     setStatus(isLive ? 'Lokacija najdena' : 'Ročna lokacija nastavljena', isLive);
     document.getElementById('set-location-btn').style.display = isLive ? 'none' : '';
+    if(!isLive && geoWatchId !== null){
+      navigator.geolocation.clearWatch(geoWatchId);
+      geoWatchId = null;
+    }
     renderList();
   }
+
+  let geoWatchId = null;
+  let firstFixDone = false;
 
   function requestGeolocation(){
     setStatus('Iščem lokacijo …', false);
@@ -957,12 +973,20 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
       showBanner('Brskalnik ni vrnil lokacije (to se pogosto zgodi, če je stran odprta lokalno iz datoteke, ne prek spletnega naslova). Za preizkus se dotakni zemljevida, da ročno nastaviš svojo lokacijo.');
       document.getElementById('set-location-btn').style.display = '';
     }, 6000);
-    navigator.geolocation.getCurrentPosition(
+    if(geoWatchId !== null){
+      navigator.geolocation.clearWatch(geoWatchId);
+    }
+    firstFixDone = false;
+    geoWatchId = navigator.geolocation.watchPosition(
       pos => {
-        if(settled) return;
-        settled = true;
-        clearTimeout(failSafe);
-        map.setView([pos.coords.latitude, pos.coords.longitude], 17);
+        if(!settled){
+          settled = true;
+          clearTimeout(failSafe);
+        }
+        if(!firstFixDone){
+          firstFixDone = true;
+          map.setView([pos.coords.latitude, pos.coords.longitude], 17);
+        }
         onLocationSuccess(pos.coords.latitude, pos.coords.longitude, true);
       },
       err => {
@@ -973,7 +997,7 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
         showBanner('Dostop do lokacije je bil zavrnjen ali ni na voljo. Za preizkus se dotakni zemljevida, da ročno nastaviš svojo lokacijo.');
         document.getElementById('set-location-btn').style.display = '';
       },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 }
     );
   }
 
@@ -1759,8 +1783,8 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
     URL.revokeObjectURL(url);
   }
 
-  // Admin access (soft gate only - visible in page source, meant to keep casual users out, not real security)
-  const ADMIN_PIN = 'PGD2026';
+  // Admin access is now verified server-side via the 'admin-action' edge function - the PIN never ships in this file
+  let cachedAdminPin = null;
 
   let confirmCallback = null;
   function showConfirm(message, onConfirm, title, confirmLabel){
@@ -1843,9 +1867,13 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
       btn.addEventListener('click', () => {
         const uname = btn.dataset.username;
         showConfirm('Ali res želiš izbrisati uporabnika "' + uname + '"?', async () => {
-          users = users.filter(u => u.username !== uname);
-          await deleteUserRow(uname);
-          renderAdminUsersList();
+          const result = await callAdminAction('delete', uname, cachedAdminPin);
+          if(result.success){
+            users = users.filter(u => u.username !== uname);
+            renderAdminUsersList();
+          } else {
+            showConfirm('Napaka pri brisanju: ' + (result.error || 'neznana napaka'), () => {}, 'Napaka', 'V redu');
+          }
         }, 'Izbriši uporabnika', 'Izbriši');
       });
     });
@@ -1856,9 +1884,13 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
         if(!u) return;
         const grant = !u.isAdmin;
         showConfirm(grant ? ('Ali želiš uporabniku "' + uname + '" podeliti administratorske pravice?') : ('Ali želiš uporabniku "' + uname + '" odvzeti administratorske pravice?'), async () => {
-          u.isAdmin = grant;
-          await updateUserRow(u);
-          renderAdminUsersList();
+          const result = await callAdminAction(grant ? 'grant' : 'revoke', uname, cachedAdminPin);
+          if(result.success){
+            u.isAdmin = grant;
+            renderAdminUsersList();
+          } else {
+            showConfirm('Napaka: ' + (result.error || 'neznana napaka'), () => {}, 'Napaka', 'V redu');
+          }
         }, grant ? 'Podeli administratorske pravice' : 'Odvzemi administratorske pravice', 'Potrdi');
       });
     });
@@ -1995,12 +2027,11 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
   });
   document.getElementById('admin-unlock').addEventListener('click', async () => {
     const val = document.getElementById('admin-pin-input').value;
-    if(val === ADMIN_PIN){
+    const result = await callAdminAction('grant', currentUser, val);
+    if(result.success){
+      cachedAdminPin = val;
       const u = users.find(x => x.username === currentUser);
-      if(u){
-        u.isAdmin = true;
-        await updateUserRow(u);
-      }
+      if(u) u.isAdmin = true;
       renderAdminAreaList();
       document.getElementById('admin-users-toggle').textContent = 'Uporabniki (' + users.length + ')';
       document.getElementById('admin-users-list').style.display = 'none';
