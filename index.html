@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hidranti</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14171A;
+    --surface:#1E2226;
+    --surface-2:#262B30;
+    --accent-red:#D7263D;
+    --accent-red-dim:#8f1a29;
+    --accent-amber:#FFB100;
+    --text-primary:#F2F1EC;
+    --text-muted:#9AA0A6;
+    --border:#34393E;
+  }
+  *{box-sizing:border-box;}
+  input, select, textarea{ font-size:16px !important; }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg);
+    color:var(--text-primary);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior:none;
+    overflow:hidden;
+  }
+  #app{
+    position:fixed;
+    inset:0;
+    width:100%;
+    max-width:480px;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  /* Top bar */
+  #topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 16px;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    z-index:20;
+    flex-shrink:0;
+  }
+  #topbar .title{
+    font-size:18px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  #topbar .tag{
+    font-size:12px;
+    color:var(--text-muted);
+    margin-top:2px;
+  }
+  #topbar .status-dot{
+    width:8px; height:8px; border-radius:50%;
+    display:inline-block;
+    margin-right:6px;
+    background:var(--text-muted);
+  }
+  #topbar .status-dot.live{ background:#3DDC84; }
+  #set-location-btn{
+    background:none;
+    border:1px solid var(--border);
+    color:var(--text-primary);
+    padding:6px 10px;
+    border-radius:14px;
+    font-size:12px;
+    font-family:inherit;
+    flex-shrink:0;
+  }
+
+  /* Map */
+  #map{
+    position:absolute;
+    inset:0;
+    background:#0e1012;
+    z-index:1;
+  }
+  .leaflet-container{ background:#0e1012; font-family:'IBM Plex Sans', sans-serif; }
+  .leaflet-control-attribution{
+    font-size:9px !important;
+    background:rgba(30,34,38,0.6) !important;
+    color:var(--text-muted) !important;
+    padding:1px 4px !important;
+  }
+  .leaflet-control-attribution a{ color:var(--text-muted) !important; }
+
+  /* Permission banner */
+  #permission-banner{
+    position:absolute;
+    top:70px; left:12px; right:12px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-left:3px solid var(--accent-amber);
+    border-radius:6px;
+    padding:12px 14px;
+    z-index:30;
+    font-size:13px;
+    line-height:1.45;
+    color:var(--text-primary);
+    display:none;
+  }
+  #permission-banner strong{ display:block; margin-bottom:4px; font-size:13px;}
+  #permission-banner button{
+    margin-top:8px;
+    background:none;
+    border:1px solid var(--border);
+    color:var(--text-primary);
+    padding:6px 10px;
+    border-radius:5px;
+    font-size:12px;
+    font-family:inherit;
+  }
+
+  /* Floating add button */
+  #fab{
+    position:absolute;
+    right:16px;
+    bottom:16px;
+    z-index:25;
+    width:56px; height:56px;
+    border-radius:50%;
+    background:var(--accent-red);
+    border:none;
+    color:white;
+    font-size:28px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 14px rgba(0,0,0,0.4);
+  }
+  #fab:active{ background:var(--accent-red-dim); }
+
+  /* Bottom sheet */
+  #sheet{
+    flex-shrink:0;
+    background:var(--surface);
+    border-top:1px solid var(--border);
+    border-radius:16px 16px 0 0;
+    z-index:20;
+    box-shadow:0 -6px 20px rgba(0,0,0,0.35);
+  }
+  #sheet-handle{
+    width:36px; height:4px;
+    background:var(--border);
+    border-radius:2px;
+    margin:8px auto 4px;
+  }
+  #sheet-header{
+    padding:2px 18px 10px;
+    font-size:13px;
+    color:var(--text-muted);
+  }
+  #nearest-hero{
+    padding:0 18px 14px;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    border-bottom:1px solid var(--border);
+    padding-bottom:14px;
+    margin-bottom:6px;
+  }
+  #nearest-hero .num{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:44px;
+    color:var(--accent-amber);
+    letter-spacing:-0.02em;
+  }
+  #nearest-hero .unit{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:18px;
+    color:var(--accent-amber);
+    opacity:0.85;
+  }
+  #nearest-hero .meta{
+    margin-left:auto;
+    text-align:right;
+  }
+  #nearest-hero .meta .label{
+    font-size:14px;
+    font-weight:500;
+  }
+  #nearest-hero .meta .sub{
+    font-size:12px;
+    color:var(--text-muted);
+    margin-top:2px;
+  }
+  #list{
+    padding:0 18px 18px;
+    max-height:22vh;
+    overflow-y:auto;
+  }
+  .row{
+    display:flex;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+    font-size:14px;
+  }
+  .row:last-child{ border-bottom:none; }
+  .row .rank{
+    width:20px;
+    color:var(--text-muted);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+  }
+  .row .label{ flex:1; padding-right:8px; }
+  .row .dist{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--text-primary);
+    font-size:14px;
+    font-weight:500;
+  }
+  .empty-state{
+    padding:20px 18px 24px;
+    font-size:13px;
+    color:var(--text-muted);
+    line-height:1.5;
+  }
+
+  /* Modal for adding a hydrant */
+  #modal-backdrop{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    z-index:40;
+    display:none;
+    align-items:flex-end;
+  }
+  #modal, .sheet-modal{
+    width:100%;
+    background:var(--surface);
+    border-radius:16px 16px 0 0;
+    padding:20px 20px 24px;
+    border-top:1px solid var(--border);
+    max-height:85vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  #modal h2, .sheet-modal h2{
+    font-size:16px;
+    margin:0 0 4px;
+    font-weight:600;
+  }
+  #modal .coords, .sheet-modal .coords{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--text-muted);
+    margin-bottom:16px;
+  }
+  #modal label, .sheet-modal label{
+    display:block;
+    font-size:12px;
+    color:var(--text-muted);
+    margin-bottom:6px;
+  }
+  #modal input, .sheet-modal input{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--text-primary);
+    border-radius:6px;
+    padding:11px 12px;
+    font-size:14px;
+    font-family:inherit;
+    margin-bottom:16px;
+  }
+  #modal input:focus, .sheet-modal input:focus{ outline:none; border-color:var(--accent-amber); }
+  #modal .btn-row, .sheet-modal .btn-row{ display:flex; gap:10px; align-items:center; }
+  #modal button, .sheet-modal button{
+    flex:1;
+    padding:12px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:500;
+    font-family:inherit;
+    border:1px solid var(--border);
+  }
+  #modal .btn-cancel, .sheet-modal .btn-cancel{ background:none; color:var(--text-primary); }
+  #modal .btn-save, .sheet-modal .btn-save{ background:var(--accent-red); color:white; border-color:var(--accent-red); }
+  .btn-row .btn-side{ flex:0 0 auto; padding:12px 16px; }
+
+  .leaflet-popup-content-wrapper{
+    background:var(--surface-2);
+    color:var(--text-primary);
+    border-radius:8px;
+  }
+  .leaflet-popup-content{ font-family:'IBM Plex Sans', sans-serif; font-size:13px; margin:10px 12px;}
+  .leaflet-popup-tip{ background:var(--surface-2); }
+
+  .toggle-row{ display:flex; gap:8px; margin-bottom:16px; }
+  .toggle-btn{
+    flex:1;
+    padding:11px 8px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text-primary);
+    font-size:13px;
+    font-weight:500;
+    font-family:inherit;
+  }
+  .toggle-btn.active[data-kind="working-true"]{ background:#3DDC84; border-color:#3DDC84; color:#0e1012; }
+  .toggle-btn.active[data-kind="working-false"]{ background:var(--accent-red); border-color:var(--accent-red); color:white; }
+  .toggle-btn.active[data-kind="pressure-good"]{ background:#3DDC84; border-color:#3DDC84; color:#0e1012; }
+  .toggle-btn.active[data-kind="pressure-bad"]{ background:var(--accent-amber); border-color:var(--accent-amber); color:#0e1012; }
+  .toggle-btn.active[data-kind="tip-nadzemni"], .toggle-btn.active[data-kind="tip-podzemni"]{ background:var(--text-primary); border-color:var(--text-primary); color:#0e1012; }
+  .toggle-btn.active[data-kind="avail-true"]{ background:#3DDC84; border-color:#3DDC84; color:#0e1012; }
+  .toggle-btn.active[data-kind="avail-false"]{ background:var(--accent-red); border-color:var(--accent-red); color:white; }
+  .toggle-btn.active[data-kind="bulk-hidrant"], .toggle-btn.active[data-kind="bulk-aed"]{ background:var(--text-primary); border-color:var(--text-primary); color:#0e1012; }
+
+  #admin-link{
+    text-align:center;
+    padding:10px 0 6px;
+    font-size:11px;
+    color:var(--text-muted);
+  }
+  .toggle-btn:disabled, #detail-note:disabled, #detail-label:disabled, #detail-naselje:disabled, #detail-lat:disabled, #detail-lng:disabled, #aed-lat:disabled, #aed-lng:disabled, #aed-naselje:disabled, #aed-label:disabled, #aed-note:disabled{
+    opacity:0.4;
+  }
+  .status-dot-inline{
+    display:inline-block;
+    width:9px; height:9px;
+    border-radius:50%;
+    margin-right:8px;
+    flex-shrink:0;
+  }
+
+  @keyframes hydrant-ping{
+    0%   { transform: scale(1); opacity: 0.65; }
+    100% { transform: scale(2.6); opacity: 0; }
+  }
+  .hydrant-pulse-marker > div{
+    position: relative;
+  }
+  .hydrant-pulse-marker > div::before{
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 16px; height: 16px;
+    margin: -8px 0 0 -8px;
+    border-radius: 50%;
+    background: rgba(20,23,26,0.5);
+    animation: hydrant-ping 1.6s ease-out infinite;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="topbar">
+    <div>
+      <div class="title">Hidranti</div>
+      <div class="tag"><span class="status-dot" id="status-dot"></span><span id="status-text">Iščem lokacijo …</span></div>
+    </div>
+    <div style="display:flex; flex-direction:row; align-items:center; gap:6px; flex-shrink:0;">
+      <button id="set-location-btn">Ročna lokacija</button>
+      <button id="login-btn" style="background:none; border:1px solid var(--border); color:var(--text-primary); padding:6px 10px; border-radius:14px; font-size:12px; font-family:inherit; flex-shrink:0; white-space:nowrap;">Prijava</button>
+    </div>
+  </div>
+
+  <div id="login-backdrop" style="position:absolute; inset:0; background:rgba(0,0,0,0.6); z-index:45; display:none; align-items:flex-end;">
+    <div class="sheet-modal" style="width:100%; background:var(--surface); border-radius:16px 16px 0 0; padding:20px 20px 24px; border-top:1px solid var(--border);">
+      <h2 id="login-title" style="font-size:16px; margin:0 0 4px; font-weight:600;">Prijava</h2>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Za dodajanje in urejanje hidrantov ter AED naprav se prijavi. Ogled zemljevida je na voljo brez prijave.</div>
+      <label for="login-username" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Uporabniško ime</label>
+      <input id="login-username" type="text" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:inherit; margin-bottom:12px;" />
+      <label for="login-password" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Geslo</label>
+      <input id="login-password" type="password" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:inherit; margin-bottom:8px;" />
+      <div id="login-error" style="color:var(--accent-red); font-size:12px; margin-bottom:12px; display:none;">Napačno uporabniško ime ali geslo.</div>
+      <div class="btn-row" style="margin-bottom:12px;">
+        <button class="btn-cancel" id="login-cancel">Prekliči</button>
+        <button class="btn-save" id="login-submit">Prijava</button>
+      </div>
+      <div id="login-toggle-mode" style="text-align:center; font-size:12px; color:var(--text-muted);">Nimaš računa? <span style="text-decoration:underline;">Registriraj se</span></div>
+    </div>
+  </div>
+
+  <div style="position:relative; flex:1; min-height:0;">
+    <div id="map"></div>
+    <div id="permission-banner">
+      <strong>Lokacija ni na voljo</strong>
+      <span id="permission-text">Za prikaz razdalje do hidrantov omogoči dostop do lokacije v brskalniku.</span>
+      <button id="retry-location">Poskusi znova</button>
+      <button id="manual-location">Nastavi ročno (dotik na zemljevid)</button>
+    </div>
+    <button id="fab" aria-label="Dodaj">+</button>
+    <div id="layer-toggle" style="position:absolute; top:12px; right:12px; z-index:20; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:12px;">
+      <label style="display:flex; align-items:center; gap:6px; margin-bottom:5px;"><input type="checkbox" id="layer-hydrants" checked style="width:14px; height:14px;">Hidranti</label>
+      <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="layer-aeds" checked style="width:14px; height:14px;">AED</label>
+    </div>
+    <div id="fab-choice-backdrop" style="position:absolute; inset:0; background:rgba(0,0,0,0.55); z-index:35; display:none; align-items:flex-end;">
+      <div style="width:100%; background:var(--surface); border-radius:16px 16px 0 0; padding:20px 20px 24px; border-top:1px solid var(--border);">
+        <div id="fab-type-section">
+          <h2 style="font-size:16px; margin:0 0 14px; font-weight:600;">Kaj dodajaš?</h2>
+          <button id="fab-type-hydrant" class="btn-save" style="width:100%; padding:13px; border-radius:8px; font-size:14px; font-weight:500; margin-bottom:10px; font-family:inherit;">Hidrant</button>
+          <button id="fab-type-aed" class="btn-save" style="width:100%; padding:13px; border-radius:8px; font-size:14px; font-weight:500; margin-bottom:10px; font-family:inherit;">AED</button>
+          <button id="fab-type-cancel" style="width:100%; padding:11px; border-radius:8px; font-size:13px; background:none; border:none; color:var(--text-muted); font-family:inherit;">Prekliči</button>
+        </div>
+        <div id="fab-location-section" style="display:none;">
+          <h2 id="fab-location-title" style="font-size:16px; margin:0 0 14px; font-weight:600;">Dodaj</h2>
+          <button id="fab-choice-here" class="btn-save" style="width:100%; padding:13px; border-radius:8px; font-size:14px; font-weight:500; margin-bottom:10px; font-family:inherit;">Sem na lokaciji</button>
+          <button id="fab-choice-manual" class="btn-cancel" style="width:100%; padding:13px; border-radius:8px; font-size:14px; font-weight:500; margin-bottom:10px; font-family:inherit;">Izberi na zemljevidu / vnesi ročno</button>
+          <button id="fab-choice-cancel" style="width:100%; padding:11px; border-radius:8px; font-size:13px; background:none; border:none; color:var(--text-muted); font-family:inherit;">Prekliči</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sheet">
+    <div id="sheet-handle"></div>
+    <div id="sheet-header">Najbližji hidranti</div>
+    <div id="sheet-body"></div>
+    <div id="admin-link">Administracija</div>
+  </div>
+
+  <div id="modal-backdrop">
+    <div id="modal">
+      <h2>Dodaj hidrant tukaj</h2>
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <div style="flex:1;">
+          <label for="modal-lat" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Zemljepisna širina</label>
+          <input id="modal-lat" type="number" step="0.00001" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:'IBM Plex Mono', monospace;" />
+        </div>
+        <div style="flex:1;">
+          <label for="modal-lng" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Zemljepisna dolžina</label>
+          <input id="modal-lng" type="number" step="0.00001" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:'IBM Plex Mono', monospace;" />
+        </div>
+      </div>
+      <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Vrsta hidranta</label>
+      <div class="toggle-row" id="modal-tip-toggle">
+        <button class="toggle-btn" data-kind="tip-nadzemni">Nadzemni</button>
+        <button class="toggle-btn" data-kind="tip-podzemni">Podzemni</button>
+      </div>
+      <label for="modal-naselje">Naselje</label>
+      <input id="modal-naselje" type="text" placeholder="npr. Kidričevo, Apače, Strnišče" />
+      <label for="modal-label">Oznaka ali ulica</label>
+      <input id="modal-label" type="text" placeholder="npr. Kidričeva cesta 12" />
+      <div class="btn-row">
+        <button class="btn-cancel" id="modal-cancel">Prekliči</button>
+        <button class="btn-save" id="modal-save">Shrani hidrant</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="aed-modal-backdrop" style="position:absolute; inset:0; background:rgba(0,0,0,0.6); z-index:40; display:none; align-items:flex-end;">
+    <div id="aed-modal" class="sheet-modal" style="width:100%; background:var(--surface); border-radius:16px 16px 0 0; padding:20px 20px 24px; border-top:1px solid var(--border);">
+      <h2 id="aed-modal-title" style="font-size:16px; margin:0 0 4px; font-weight:600;">Dodaj AED tukaj</h2>
+      <div style="display:flex; gap:10px; margin:16px 0;">
+        <div style="flex:1;">
+          <label for="aed-lat" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Zemljepisna širina</label>
+          <input id="aed-lat" type="number" step="0.00001" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:'IBM Plex Mono', monospace;" />
+        </div>
+        <div style="flex:1;">
+          <label for="aed-lng" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Zemljepisna dolžina</label>
+          <input id="aed-lng" type="number" step="0.00001" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:'IBM Plex Mono', monospace;" />
+        </div>
+      </div>
+      <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Razpoložljivost</label>
+      <div class="toggle-row" id="aed-availability-toggle">
+        <button class="toggle-btn" data-kind="avail-true">Na voljo</button>
+        <button class="toggle-btn" data-kind="avail-false">Ni na voljo</button>
+      </div>
+      <label for="aed-naselje" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Naselje</label>
+      <input id="aed-naselje" type="text" placeholder="npr. Kidričevo, Apače, Strnišče" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:inherit; margin-bottom:16px;" />
+      <label for="aed-label" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Oznaka lokacije</label>
+      <input id="aed-label" type="text" placeholder="npr. Vhod v Dom kulture" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:inherit; margin-bottom:16px;" />
+      <label for="aed-note" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Opis stanja (neobvezno)</label>
+      <input id="aed-note" type="text" placeholder="npr. baterija prazna, poškodovana embalaža" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:inherit; margin-bottom:8px;" />
+      <div id="aed-last-inspection" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;"></div>
+      <div id="aed-history-toggle" style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Zgodovina pregledov</div>
+      <div id="aed-history-list" style="display:none; max-height:20vh; overflow-y:auto; margin-bottom:16px; border-top:1px solid var(--border); padding-top:10px;"></div>
+      <div class="btn-row">
+        <button class="btn-cancel" id="aed-cancel">Zapri</button>
+        <button class="btn-save" id="aed-edit" style="display:none;">Uredi</button>
+        <button class="btn-save" id="aed-save">Shrani AED</button>
+      </div>
+      <button id="aed-delete" style="display:none; width:100%; margin-top:10px; padding:11px; border-radius:8px; font-size:13px; background:none; border:1px solid var(--accent-red); color:var(--accent-red); font-family:inherit;">Izbriši AED</button>
+    </div>
+  </div>
+
+  <div id="detail-backdrop" style="position:absolute; inset:0; background:rgba(0,0,0,0.55); z-index:40; display:none; align-items:flex-end;">
+    <div id="detail-modal" class="sheet-modal" style="width:100%; background:var(--surface); border-radius:16px 16px 0 0; padding:20px 20px 24px; border-top:1px solid var(--border);">
+      <h2 id="detail-title" style="font-size:16px; margin:0 0 4px; font-weight:600;">Hidrant</h2>
+      <div style="display:flex; gap:10px; margin:14px 0 0;">
+        <div style="flex:1;">
+          <label for="detail-lat" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Zemljepisna širina</label>
+          <input id="detail-lat" type="number" step="0.00001" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:'IBM Plex Mono', monospace;" />
+        </div>
+        <div style="flex:1;">
+          <label for="detail-lng" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Zemljepisna dolžina</label>
+          <input id="detail-lng" type="number" step="0.00001" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:'IBM Plex Mono', monospace;" />
+        </div>
+      </div>
+      <label style="display:block; font-size:12px; color:var(--text-muted); margin:14px 0 6px;">Naselje</label>
+      <input id="detail-naselje" type="text" placeholder="npr. Kidričevo, Apače, Strnišče" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:inherit; margin-bottom:16px;" />
+      <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Vrsta hidranta</label>
+      <div class="toggle-row" id="detail-tip-toggle">
+        <button class="toggle-btn" data-kind="tip-nadzemni">Nadzemni</button>
+        <button class="toggle-btn" data-kind="tip-podzemni">Podzemni</button>
+      </div>
+      <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Stanje delovanja</label>
+      <div class="toggle-row" id="working-toggle">
+        <button class="toggle-btn" data-kind="working-true">Deluje</button>
+        <button class="toggle-btn" data-kind="working-false">Ne deluje</button>
+      </div>
+      <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Pritisk vode</label>
+      <div class="toggle-row" id="pressure-toggle">
+        <button class="toggle-btn" data-kind="pressure-good">Dober</button>
+        <button class="toggle-btn" data-kind="pressure-bad">Slab</button>
+      </div>
+      <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Opis stanja (neobvezno)</label>
+      <input id="detail-note" type="text" placeholder="npr. pokrov poškodovan, težko dostopen" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:inherit; margin-bottom:12px;" />
+      <div id="detail-history-toggle" style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Zgodovina pregledov</div>
+      <div id="detail-history-list" style="display:none; max-height:20vh; overflow-y:auto; margin-bottom:16px; border-top:1px solid var(--border); padding-top:10px;"></div>
+      <label for="detail-label" style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;">Oznaka ali ulica</label>
+      <input id="detail-label" type="text" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:inherit; margin-bottom:16px;" />
+      <div class="btn-row" style="justify-content:space-between; gap:6px;">
+        <div style="display:flex; gap:6px; min-width:0;">
+          <button class="btn-cancel" id="detail-cancel" style="flex:0 0 auto; padding:10px 12px; font-size:13px; white-space:nowrap;">Zapri</button>
+          <button class="btn-save" id="detail-edit" style="flex:0 0 auto; padding:10px 12px; font-size:13px; white-space:nowrap;">Uredi</button>
+          <button class="btn-save" id="detail-save" style="display:none; flex:0 0 auto; padding:10px 12px; font-size:13px; white-space:nowrap;">Shrani</button>
+        </div>
+        <button id="detail-unchanged" class="btn-side" style="background:none; border:1px solid var(--border); color:var(--text-primary); padding:10px 10px; font-size:12px; white-space:nowrap; flex:0 0 auto;">Ni sprememb</button>
+      </div>
+      <button id="detail-delete" style="display:none; width:100%; margin-top:10px; padding:11px; border-radius:8px; font-size:13px; background:none; border:1px solid var(--accent-red); color:var(--accent-red); font-family:inherit;">Izbriši hidrant</button>
+    </div>
+  </div>
+
+  <div id="prompt-backdrop" style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:70; display:none; align-items:flex-end;">
+    <div class="sheet-modal" style="width:100%; background:var(--surface); border-radius:16px 16px 0 0; padding:20px 20px 24px; border-top:1px solid var(--border);">
+      <h2 id="prompt-title" style="font-size:16px; margin:0 0 12px; font-weight:600;">Naslov</h2>
+      <input id="prompt-input" type="text" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:inherit; margin-bottom:16px;" />
+      <div class="btn-row">
+        <button class="btn-cancel" id="prompt-cancel">Prekliči</button>
+        <button class="btn-save" id="prompt-ok">Potrdi</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-backdrop" style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:70; display:none; align-items:flex-end;">
+    <div class="sheet-modal" style="width:100%; background:var(--surface); border-radius:16px 16px 0 0; padding:20px 20px 24px; border-top:1px solid var(--border);">
+      <h2 id="confirm-title" style="font-size:16px; margin:0 0 8px; font-weight:600;">Potrditev</h2>
+      <div id="confirm-message" style="font-size:14px; color:var(--text-muted); margin-bottom:18px; line-height:1.4;"></div>
+      <div class="btn-row">
+        <button class="btn-cancel" id="confirm-cancel">Prekliči</button>
+        <button class="btn-save" id="confirm-ok">Potrdi</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-backdrop" style="position:absolute; inset:0; background:rgba(0,0,0,0.55); z-index:50; display:none; align-items:flex-end;">
+    <div id="admin-modal" class="sheet-modal" style="width:100%; background:var(--surface); border-radius:16px 16px 0 0; padding:20px 20px 24px; border-top:1px solid var(--border);">
+      <h2 style="font-size:16px; margin:0 0 4px; font-weight:600;">Administracija</h2>
+
+      <div id="admin-pin-section">
+        <label style="display:block; font-size:12px; color:var(--text-muted); margin:12px 0 6px;">Dostopna koda</label>
+        <input id="admin-pin-input" type="password" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:14px; font-family:inherit; margin-bottom:8px;" />
+        <div id="admin-pin-error" style="color:var(--accent-red); font-size:12px; margin-bottom:12px; display:none;">Napačna koda.</div>
+        <div class="btn-row">
+          <button class="btn-cancel" id="admin-cancel">Prekliči</button>
+          <button class="btn-save" id="admin-unlock">Vstopi</button>
+        </div>
+      </div>
+
+      <div id="admin-panel-section" style="display:none;">
+        <label style="display:block; font-size:12px; color:var(--text-muted); margin:12px 0 6px;">Izberi naselja za izvoz hidrantov</label>
+        <div id="admin-area-list" style="max-height:26vh; overflow-y:auto; margin-bottom:14px;"></div>
+        <div class="btn-row" style="margin-bottom:10px;">
+          <button class="btn-cancel" id="admin-close">Zapri</button>
+          <button class="btn-save" id="admin-export" style="white-space:nowrap; padding-left:8px; padding-right:8px;">Hidranti</button>
+          <button class="btn-save" id="admin-export-aed" style="background:#1E8E3E; border-color:#1E8E3E; white-space:nowrap; padding-left:8px; padding-right:8px;">AED</button>
+        </div>
+        <button class="btn-cancel" id="admin-export-map" style="width:100%; margin-bottom:10px;">Izvozi zemljevid (stran na naselje)</button>
+        <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
+          <div id="admin-bulk-toggle" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Množično dodajanje</div>
+          <div id="admin-bulk-section" style="display:none; margin-bottom:12px;">
+            <div class="toggle-row" id="bulk-type-toggle" style="margin-bottom:12px;">
+              <button class="toggle-btn active" data-kind="bulk-hidrant">Hidranti</button>
+              <button class="toggle-btn" data-kind="bulk-aed">AED</button>
+            </div>
+            <div id="admin-bulk-help" style="font-size:12px; color:var(--text-muted); margin-bottom:8px; line-height:1.5;">Ena vrstica na hidrant, v obliki: <br><span style="font-family:'IBM Plex Mono', monospace;">naselje, oznaka, širina, dolžina, vrsta</span><br>(vrsta je neobvezna: nadzemni/podzemni)</div>
+            <textarea id="admin-bulk-input" rows="6" placeholder="Kidričevo, Cesta XY, 46.38490, 15.78810, nadzemni
+Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); border-radius:6px; padding:11px 12px; font-size:16px; font-family:'IBM Plex Mono', monospace; margin-bottom:10px;"></textarea>
+            <button class="btn-save" id="admin-bulk-add" style="width:100%; margin-bottom:8px;">Dodaj vse</button>
+            <div id="admin-bulk-result" style="font-size:12px; color:var(--text-muted);"></div>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
+          <div id="admin-users-toggle" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Uporabniki (0)</div>
+          <div id="admin-users-list" style="display:none; max-height:26vh; overflow-y:auto; margin-bottom:12px;"></div>
+        </div>
+        <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Varnostna kopija vseh podatkov (za prenos v prihodnjo posodobitev aplikacije)</div>
+          <button class="btn-cancel" id="admin-backup" style="width:100%;">Prenesi popolno varnostno kopijo (JSON)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  window.addEventListener('error', function(e){
+    var el = document.createElement('div');
+    el.style.cssText = 'background:#5a1420;color:#fff;padding:14px;font-family:monospace;font-size:12px;position:fixed;top:0;left:0;right:0;z-index:9999;white-space:pre-wrap;';
+    el.textContent = 'JS napaka: ' + (e.message || e) + ' (vrstica ' + e.lineno + ')';
+    document.body.appendChild(el);
+  });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+ try{
+  // Fallback centre: Kidričevo, Slovenia
+  const FALLBACK_CENTER = [46.3838, 15.7897];
+
+  const SUPABASE_URL = 'https://vnpewsyykudajyjmcnpd.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_l9wuGMtB5Enk37Cw5FZpTQ_LTh9b6KG';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  function hydrantToRow(h){
+    return {
+      id: h.id, lat: h.lat, lng: h.lng, label: h.label, naselje: h.naselje, tip: h.tip,
+      working: h.working === undefined ? null : h.working,
+      pressure: h.pressure || null, note: h.note || null,
+      added_at: h.addedAt || null, updated_at: h.updatedAt || null,
+      last_inspection: h.lastInspection || null, last_inspected_by: h.lastInspectedBy || null,
+      inspections: h.inspections || []
+    };
+  }
+  function rowToHydrant(r){
+    return {
+      id: r.id, lat: r.lat, lng: r.lng, label: r.label, naselje: r.naselje, tip: r.tip,
+      working: r.working, pressure: r.pressure, note: r.note,
+      addedAt: r.added_at, updatedAt: r.updated_at,
+      lastInspection: r.last_inspection, lastInspectedBy: r.last_inspected_by,
+      inspections: r.inspections || []
+    };
+  }
+  function aedToRow(a){
+    return {
+      id: a.id, lat: a.lat, lng: a.lng, label: a.label, naselje: a.naselje, note: a.note || null,
+      available: a.available === undefined ? null : a.available,
+      added_at: a.addedAt || null, last_inspection: a.lastInspection || null,
+      last_inspected_by: a.lastInspectedBy || null, inspections: a.inspections || []
+    };
+  }
+  function rowToAed(r){
+    return {
+      id: r.id, lat: r.lat, lng: r.lng, label: r.label, naselje: r.naselje, note: r.note,
+      available: r.available, addedAt: r.added_at,
+      lastInspection: r.last_inspection, lastInspectedBy: r.last_inspected_by,
+      inspections: r.inspections || []
+    };
+  }
+  function userToRow(u){
+    return { username: u.username, password: u.password, is_admin: !!u.isAdmin, added_at: u.addedAt || null };
+  }
+  function rowToUser(r){
+    return { username: r.username, password: r.password, isAdmin: r.is_admin, addedAt: r.added_at };
+  }
+
+  let userLatLng = null;
+  let hydrants = [];
+  let markers = {};
+  let aeds = [];
+  let aedMarkers = {};
+  let users = [];
+  let currentUser = null;
+  try{ currentUser = localStorage.getItem('hidrantiUsername') || null; }catch(e){}
+  let loginMode = 'login';
+  let userMarker = null;
+  let manualModeActive = false;
+  let pendingAddLatLng = null;
+
+  const map = L.map('map', { zoomControl: true, attributionControl: true })
+    .setView(FALLBACK_CENTER, 16);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+
+  function statusColor(h){
+    if(h.working === false) return '#D7263D';
+    if(h.working === true && h.pressure === 'bad') return '#FFB100';
+    if(h.working === true && h.pressure === 'good') return '#3DDC84';
+    return '#9AA0A6';
+  }
+
+  function statusSummary(h){
+    const parts = [];
+    if(h.tip === 'nadzemni') parts.push('Nadzemni');
+    else if(h.tip === 'podzemni') parts.push('Podzemni');
+    if(h.working === true) parts.push('Deluje');
+    else if(h.working === false) parts.push('Ne deluje');
+    if(h.pressure === 'good') parts.push('Pritisk dober');
+    else if(h.pressure === 'bad') parts.push('Pritisk slab');
+    return parts.length ? parts.join(' · ') : 'Ni preverjeno';
+  }
+
+  function hydrantIcon(color, pulse){
+    return L.divIcon({
+      className: pulse ? 'hydrant-pulse-marker' : '',
+      html: '<div style="width:16px;height:16px;border-radius:50%;background:' + color + ';border:2px solid #F2F1EC;box-shadow:0 0 0 2px rgba(0,0,0,0.3);"></div>',
+      iconSize: [16,16],
+      iconAnchor: [8,8]
+    });
+  }
+
+  function aedIcon(available){
+    const bg = available === false ? '#D7263D' : '#1E8E3E';
+    return L.divIcon({
+      className: '',
+      html: '<div style="width:22px;height:22px;background:' + bg + ';border:2px solid #F2F1EC;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;font-family:\'IBM Plex Sans\', sans-serif;letter-spacing:0.02em;">AED</div>',
+      iconSize: [22,22],
+      iconAnchor: [11,11]
+    });
+  }
+
+  function userIcon(){
+    return L.divIcon({
+      className: '',
+      html: '<div style="width:14px;height:14px;border-radius:50%;background:#3DDC84;border:2px solid #14171A;box-shadow:0 0 0 6px rgba(61,220,132,0.25);"></div>',
+      iconSize: [14,14],
+      iconAnchor: [7,7]
+    });
+  }
+
+  function haversine(lat1, lon1, lat2, lon2){
+    const R = 6371000;
+    const toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2-lat1);
+    const dLon = toRad(lon2-lon1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function setStatus(text, live){
+    document.getElementById('status-text').textContent = text;
+    document.getElementById('status-dot').className = 'status-dot' + (live ? ' live' : '');
+  }
+
+  function showBanner(msg){
+    document.getElementById('permission-text').textContent = msg;
+    document.getElementById('permission-banner').style.display = 'block';
+  }
+  function hideBanner(){
+    document.getElementById('permission-banner').style.display = 'none';
+  }
+
+  async function loadHydrants(){
+    try{
+      const { data, error } = await sb.from('hydrants').select('*');
+      if(error) throw error;
+      hydrants = (data || []).map(rowToHydrant);
+    }catch(e){
+      console.error('loadHydrants failed:', e);
+      hydrants = [];
+    }
+    renderHydrantMarkers();
+    renderList();
+  }
+
+  async function loadAeds(){
+    try{
+      const { data, error } = await sb.from('aeds').select('*');
+      if(error) throw error;
+      aeds = (data || []).map(rowToAed);
+    }catch(e){
+      console.error('loadAeds failed:', e);
+      aeds = [];
+    }
+    renderAedMarkers();
+  }
+
+  async function loadUsers(){
+    try{
+      const { data, error } = await sb.from('app_users').select('*');
+      if(error) throw error;
+      users = (data || []).map(rowToUser);
+    }catch(e){
+      console.error('loadUsers failed:', e);
+      users = [];
+    }
+  }
+
+  function reportDbError(context, error){
+    if(!error) return;
+    console.error(context, error);
+    showConfirm('Napaka pri shranjevanju v bazo (' + context + '): ' + (error.message || JSON.stringify(error)), () => {}, 'Napaka baze', 'V redu');
+  }
+
+  async function saveHydrant(h){
+    hydrants.push(h);
+    const { error } = await sb.from('hydrants').insert([hydrantToRow(h)]);
+    reportDbError('dodajanje hidranta', error);
+    renderHydrantMarkers();
+    renderList();
+  }
+
+  async function updateHydrantRow(h){
+    const { error } = await sb.from('hydrants').update(hydrantToRow(h)).eq('id', h.id);
+    reportDbError('posodabljanje hidranta', error);
+  }
+
+  async function deleteHydrantRow(id){
+    const { error } = await sb.from('hydrants').delete().eq('id', id);
+    reportDbError('brisanje hidranta', error);
+  }
+
+  async function saveAed(a){
+    const { error } = await sb.from('aeds').insert([aedToRow(a)]);
+    reportDbError('dodajanje AED', error);
+  }
+
+  async function updateAedRow(a){
+    const { error } = await sb.from('aeds').update(aedToRow(a)).eq('id', a.id);
+    reportDbError('posodabljanje AED', error);
+  }
+
+  async function deleteAedRow(id){
+    const { error } = await sb.from('aeds').delete().eq('id', id);
+    reportDbError('brisanje AED', error);
+  }
+
+  async function insertUserRow(u){
+    const { error } = await sb.from('app_users').insert([userToRow(u)]);
+    reportDbError('registracija uporabnika', error);
+  }
+
+  async function updateUserRow(u){
+    const { error } = await sb.from('app_users').update(userToRow(u)).eq('username', u.username);
+    reportDbError('posodabljanje uporabnika', error);
+  }
+
+  async function deleteUserRow(username){
+    const { error } = await sb.from('app_users').delete().eq('username', username);
+    reportDbError('brisanje uporabnika', error);
+  }
+
+  function renderHydrantMarkers(){
+    Object.values(markers).forEach(m => map.removeLayer(m));
+    markers = {};
+    const visible = document.getElementById('layer-hydrants').checked;
+    hydrants.forEach(h => {
+      const m = L.marker([h.lat, h.lng], { icon: hydrantIcon(statusColor(h)) });
+      if(visible) m.addTo(map);
+      m.on('click', () => openDetailModal(h.id));
+      markers[h.id] = m;
+    });
+  }
+
+  function renderAedMarkers(){
+    Object.values(aedMarkers).forEach(m => map.removeLayer(m));
+    aedMarkers = {};
+    const visible = document.getElementById('layer-aeds').checked;
+    aeds.forEach(a => {
+      const m = L.marker([a.lat, a.lng], { icon: aedIcon(a.available) });
+      if(visible) m.addTo(map);
+      m.on('click', () => openAedDetail(a.id));
+      aedMarkers[a.id] = m;
+    });
+  }
+
+  function renderList(){
+    const body = document.getElementById('sheet-body');
+    if(!hydrants.length){
+      body.innerHTML = '<div class="empty-state">Ni še vnesenih hidrantov. Dotakni se rdečega gumba, da dodaš prvega.</div>';
+      return;
+    }
+    if(!userLatLng){
+      body.innerHTML = '<div class="empty-state">Ko bo lokacija na voljo, bodo tukaj prikazani najbližji hidranti.</div>';
+      return;
+    }
+    const ranked = hydrants
+      .map(h => ({...h, dist: haversine(userLatLng.lat, userLatLng.lng, h.lat, h.lng)}))
+      .sort((a,b) => a.dist - b.dist)
+      .slice(0, 3);
+
+    const nearest = ranked[0];
+    const rest = ranked.slice(1);
+
+    let html = '';
+    html += '<div id="nearest-hero">';
+    html += '<div><span class="num">' + Math.round(nearest.dist) + '</span><span class="unit"> m</span></div>';
+    html += '<div class="meta"><div class="label"><span class="status-dot-inline" style="background:' + statusColor(nearest) + '"></span>' + (nearest.label || 'Brez oznake') + '</div><div class="sub">' + statusSummary(nearest) + '</div></div>';
+    html += '</div>';
+    html += '<div id="list">';
+    rest.forEach((h, i) => {
+      const typeTag = h.tip ? ' <span style="color:var(--text-muted); font-size:12px;">(' + (h.tip === 'nadzemni' ? 'nadzemni' : 'podzemni') + ')</span>' : '';
+      html += '<div class="row"><span class="rank">' + (i+2) + '</span><span class="status-dot-inline" style="background:' + statusColor(h) + '"></span><span class="label">' + (h.label || 'Brez oznake') + typeTag + '</span><span class="dist">' + Math.round(h.dist) + ' m</span></div>';
+    });
+    html += '</div>';
+    document.getElementById('sheet-body').innerHTML = html;
+
+    Object.keys(markers).forEach(id => {
+      const hh = hydrants.find(x => x.id === id);
+      if(markers[id] && hh) markers[id].setIcon(hydrantIcon(statusColor(hh), id === nearest.id));
+    });
+  }
+
+  function placeUserMarker(lat, lng){
+    if(userMarker){ map.removeLayer(userMarker); }
+    userMarker = L.marker([lat, lng], { icon: userIcon() }).addTo(map);
+  }
+
+  let lastLocationLive = false;
+
+  function refreshStatusDisplay(){
+    if(userLatLng){
+      setStatus(lastLocationLive ? 'Lokacija najdena' : 'Ročna lokacija nastavljena', lastLocationLive);
+    } else {
+      setStatus('Lokacija ni na voljo', false);
+    }
+  }
+
+  function onLocationSuccess(lat, lng, isLive){
+    userLatLng = { lat, lng };
+    lastLocationLive = isLive;
+    placeUserMarker(lat, lng);
+    hideBanner();
+    setStatus(isLive ? 'Lokacija najdena' : 'Ročna lokacija nastavljena', isLive);
+    document.getElementById('set-location-btn').style.display = isLive ? 'none' : '';
+    renderList();
+  }
+
+  function requestGeolocation(){
+    setStatus('Iščem lokacijo …', false);
+    if(!navigator.geolocation){
+      showBanner('Ta brskalnik ne podpira samodejne lokacije. Nastavi jo ročno na zemljevidu.');
+      setStatus('Lokacija ni na voljo', false);
+      document.getElementById('set-location-btn').style.display = '';
+      return;
+    }
+    let settled = false;
+    const failSafe = setTimeout(() => {
+      if(settled) return;
+      settled = true;
+      setStatus('Lokacija ni na voljo', false);
+      showBanner('Brskalnik ni vrnil lokacije (to se pogosto zgodi, če je stran odprta lokalno iz datoteke, ne prek spletnega naslova). Za preizkus se dotakni zemljevida, da ročno nastaviš svojo lokacijo.');
+      document.getElementById('set-location-btn').style.display = '';
+    }, 6000);
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        if(settled) return;
+        settled = true;
+        clearTimeout(failSafe);
+        map.setView([pos.coords.latitude, pos.coords.longitude], 17);
+        onLocationSuccess(pos.coords.latitude, pos.coords.longitude, true);
+      },
+      err => {
+        if(settled) return;
+        settled = true;
+        clearTimeout(failSafe);
+        setStatus('Lokacija ni na voljo', false);
+        showBanner('Dostop do lokacije je bil zavrnjen ali ni na voljo. Za preizkus se dotakni zemljevida, da ročno nastaviš svojo lokacijo.');
+        document.getElementById('set-location-btn').style.display = '';
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
+  document.getElementById('retry-location').addEventListener('click', requestGeolocation);
+  document.getElementById('manual-location').addEventListener('click', () => {
+    manualModeActive = true;
+    hideBanner();
+    setStatus('Dotakni se zemljevida za nastavitev lokacije', false);
+  });
+  document.getElementById('set-location-btn').addEventListener('click', () => {
+    manualModeActive = true;
+    addModeActive = false;
+    hideBanner();
+    setStatus('Dotakni se zemljevida za nastavitev lokacije', false);
+  });
+
+  map.on('click', (e) => {
+    if(manualModeActive){
+      manualModeActive = false;
+      onLocationSuccess(e.latlng.lat, e.latlng.lng, false);
+      return;
+    }
+    // otherwise a map click while adding starts the add flow for whichever type was chosen
+    if(addModeActive){
+      addModeActive = false;
+      if(pendingAddType === 'aed'){
+        openAedModal(e.latlng.lat, e.latlng.lng);
+      } else {
+        openAddModal(e.latlng.lat, e.latlng.lng);
+      }
+      refreshStatusDisplay();
+    }
+  });
+
+  // Login / registration
+  function updateLoginUI(){
+    document.getElementById('login-btn').textContent = currentUser ? currentUser : 'Prijava';
+  }
+  function openLoginModal(mode){
+    loginMode = mode || 'login';
+    document.getElementById('login-username').value = '';
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-error').style.display = 'none';
+    applyLoginModeUI();
+    document.getElementById('login-backdrop').style.display = 'flex';
+  }
+  function applyLoginModeUI(){
+    if(loginMode === 'login'){
+      document.getElementById('login-title').textContent = 'Prijava';
+      document.getElementById('login-submit').textContent = 'Prijava';
+      document.getElementById('login-toggle-mode').innerHTML = 'Nimaš računa? <span style="text-decoration:underline;">Registriraj se</span>';
+    } else {
+      document.getElementById('login-title').textContent = 'Registracija';
+      document.getElementById('login-submit').textContent = 'Registriraj se';
+      document.getElementById('login-toggle-mode').innerHTML = 'Že imaš račun? <span style="text-decoration:underline;">Prijavi se</span>';
+    }
+  }
+  function requireLogin(){
+    if(currentUser) return true;
+    openLoginModal('login');
+    return false;
+  }
+
+  document.getElementById('login-btn').addEventListener('click', () => {
+    if(currentUser){
+      const who = currentUser;
+      showConfirm('Ali se želiš odjaviti kot ' + who + '?', () => {
+        currentUser = null;
+        try{ localStorage.removeItem('hidrantiUsername'); }catch(e){}
+        updateLoginUI();
+      }, 'Odjava', 'Odjava');
+    } else {
+      openLoginModal('login');
+    }
+  });
+  document.getElementById('login-cancel').addEventListener('click', () => {
+    document.getElementById('login-backdrop').style.display = 'none';
+  });
+  document.getElementById('login-backdrop').addEventListener('click', (e) => {
+    if(e.target.id === 'login-backdrop') document.getElementById('login-backdrop').style.display = 'none';
+  });
+  document.getElementById('login-toggle-mode').addEventListener('click', () => {
+    loginMode = loginMode === 'login' ? 'register' : 'login';
+    document.getElementById('login-error').style.display = 'none';
+    applyLoginModeUI();
+  });
+  document.getElementById('login-submit').addEventListener('click', async () => {
+    const uname = document.getElementById('login-username').value.trim();
+    const pwd = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    if(!uname || !pwd){
+      errEl.textContent = 'Vnesi uporabniško ime in geslo.';
+      errEl.style.display = 'block';
+      return;
+    }
+    if(loginMode === 'login'){
+      const match = users.find(u => u.username.toLowerCase() === uname.toLowerCase() && u.password === pwd);
+      if(match){
+        currentUser = match.username;
+        try{ localStorage.setItem('hidrantiUsername', currentUser); }catch(e){}
+        updateLoginUI();
+        document.getElementById('login-backdrop').style.display = 'none';
+      } else {
+        errEl.textContent = 'Napačno uporabniško ime ali geslo.';
+        errEl.style.display = 'block';
+      }
+    } else {
+      const exists = users.find(u => u.username.toLowerCase() === uname.toLowerCase());
+      if(exists){
+        errEl.textContent = 'To uporabniško ime je že zasedeno.';
+        errEl.style.display = 'block';
+        return;
+      }
+      users.push({ username: uname, password: pwd, addedAt: Date.now() });
+      await insertUserRow(users[users.length - 1]);
+      currentUser = uname;
+      try{ localStorage.setItem('hidrantiUsername', currentUser); }catch(e){}
+      updateLoginUI();
+      document.getElementById('login-backdrop').style.display = 'none';
+    }
+  });
+
+  // Add hydrant / AED flow
+  let addModeActive = false;
+  let pendingModalTip = null;
+  let pendingAddType = 'hydrant';
+
+  document.getElementById('fab').addEventListener('click', () => {
+    if(!requireLogin()) return;
+    document.getElementById('fab-type-section').style.display = '';
+    document.getElementById('fab-location-section').style.display = 'none';
+    document.getElementById('fab-choice-backdrop').style.display = 'flex';
+  });
+  document.getElementById('fab-type-cancel').addEventListener('click', () => {
+    document.getElementById('fab-choice-backdrop').style.display = 'none';
+  });
+  document.getElementById('fab-type-hydrant').addEventListener('click', () => {
+    pendingAddType = 'hydrant';
+    document.getElementById('fab-location-title').textContent = 'Dodaj hidrant';
+    document.getElementById('fab-type-section').style.display = 'none';
+    document.getElementById('fab-location-section').style.display = '';
+  });
+  document.getElementById('fab-type-aed').addEventListener('click', () => {
+    pendingAddType = 'aed';
+    document.getElementById('fab-location-title').textContent = 'Dodaj AED';
+    document.getElementById('fab-type-section').style.display = 'none';
+    document.getElementById('fab-location-section').style.display = '';
+  });
+  document.getElementById('fab-choice-cancel').addEventListener('click', () => {
+    document.getElementById('fab-choice-backdrop').style.display = 'none';
+  });
+  document.getElementById('fab-choice-here').addEventListener('click', () => {
+    document.getElementById('fab-choice-backdrop').style.display = 'none';
+    if(userLatLng){
+      if(pendingAddType === 'aed') openAedModal(userLatLng.lat, userLatLng.lng);
+      else openAddModal(userLatLng.lat, userLatLng.lng);
+    } else {
+      hideBanner();
+      setStatus('Najprej nastavi svojo lokacijo (zgoraj desno)', false);
+    }
+  });
+  document.getElementById('fab-choice-manual').addEventListener('click', () => {
+    document.getElementById('fab-choice-backdrop').style.display = 'none';
+    addModeActive = true;
+    hideBanner();
+    setStatus(pendingAddType === 'aed' ? 'Dotakni se zemljevida, kjer je AED' : 'Dotakni se zemljevida, kjer stoji hidrant', false);
+  });
+
+  document.querySelectorAll('#modal-tip-toggle .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingModalTip = btn.dataset.kind === 'tip-nadzemni' ? 'nadzemni' : 'podzemni';
+      document.querySelectorAll('#modal-tip-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  function openAddModal(lat, lng){
+    pendingAddLatLng = { lat, lng };
+    document.getElementById('modal-lat').value = lat.toFixed(5);
+    document.getElementById('modal-lng').value = lng.toFixed(5);
+    document.getElementById('modal-label').value = '';
+    document.getElementById('modal-naselje').value = '';
+    document.getElementById('modal-label').style.borderColor = 'var(--border)';
+    document.getElementById('modal-naselje').style.borderColor = 'var(--border)';
+    pendingModalTip = null;
+    document.querySelectorAll('#modal-tip-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('modal-backdrop').style.display = 'flex';
+  }
+  function closeAddModal(){
+    document.getElementById('modal-backdrop').style.display = 'none';
+    pendingAddLatLng = null;
+    addModeActive = false;
+  }
+  document.getElementById('modal-cancel').addEventListener('click', closeAddModal);
+  document.getElementById('modal-backdrop').addEventListener('click', (e) => {
+    if(e.target.id === 'modal-backdrop') closeAddModal();
+  });
+  document.getElementById('modal-save').addEventListener('click', async () => {
+    if(!pendingAddLatLng) return;
+    const lat = parseFloat(document.getElementById('modal-lat').value);
+    const lng = parseFloat(document.getElementById('modal-lng').value);
+    if(isNaN(lat) || isNaN(lng)) return;
+    const label = document.getElementById('modal-label').value.trim();
+    const naselje = document.getElementById('modal-naselje').value.trim();
+    const naseljeInput = document.getElementById('modal-naselje');
+    const labelInput = document.getElementById('modal-label');
+    naseljeInput.style.borderColor = naselje ? 'var(--border)' : 'var(--accent-red)';
+    labelInput.style.borderColor = label ? 'var(--border)' : 'var(--accent-red)';
+    if(!naselje || !label) return;
+    const h = {
+      id: 'h-' + Date.now(),
+      lat: lat,
+      lng: lng,
+      label: label,
+      naselje: naselje,
+      tip: pendingModalTip,
+      addedAt: Date.now()
+    };
+    await saveHydrant(h);
+    closeAddModal();
+    openDetailModal(h.id);
+    setEditMode(true);
+  });
+
+  // AED flow
+  let pendingAedLatLng = null;
+  let editingAedId = null;
+  let pendingAedAvailable = null;
+
+  function setAedEditMode(active){
+    document.querySelectorAll('#aed-availability-toggle .toggle-btn').forEach(b => b.disabled = !active);
+    ['aed-lat','aed-lng','aed-naselje','aed-label','aed-note'].forEach(id => {
+      document.getElementById(id).disabled = !active;
+    });
+    document.getElementById('aed-edit').style.display = active ? 'none' : (editingAedId ? '' : 'none');
+    document.getElementById('aed-save').style.display = active ? '' : (editingAedId ? 'none' : '');
+  }
+
+  function setAedToggleActive(kind){
+    document.querySelectorAll('#aed-availability-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+    if(kind){
+      const btn = document.querySelector('#aed-availability-toggle [data-kind="' + kind + '"]');
+      if(btn) btn.classList.add('active');
+    }
+  }
+
+  function openAedModal(lat, lng){
+    editingAedId = null;
+    pendingAedLatLng = { lat, lng };
+    pendingAedAvailable = null;
+    document.getElementById('aed-modal-title').textContent = 'Dodaj AED tukaj';
+    document.getElementById('aed-lat').value = lat.toFixed(5);
+    document.getElementById('aed-lng').value = lng.toFixed(5);
+    document.getElementById('aed-naselje').value = '';
+    document.getElementById('aed-label').value = '';
+    document.getElementById('aed-note').value = '';
+    document.getElementById('aed-naselje').style.borderColor = 'var(--border)';
+    document.getElementById('aed-label').style.borderColor = 'var(--border)';
+    document.getElementById('aed-last-inspection').textContent = '';
+    document.getElementById('aed-history-toggle').textContent = 'Zgodovina pregledov (0)';
+    document.getElementById('aed-history-list').style.display = 'none';
+    document.getElementById('aed-history-list').innerHTML = '';
+    setAedToggleActive(null);
+    setAedEditMode(true);
+    document.getElementById('aed-delete').style.display = 'none';
+    document.getElementById('aed-modal-backdrop').style.display = 'flex';
+  }
+
+  function openAedDetail(id){
+    const a = aeds.find(x => x.id === id);
+    if(!a) return;
+    editingAedId = id;
+    pendingAedAvailable = (a.available === true || a.available === false) ? a.available : null;
+    document.getElementById('aed-modal-title').textContent = a.label || 'AED brez oznake';
+    document.getElementById('aed-lat').value = a.lat.toFixed(5);
+    document.getElementById('aed-lng').value = a.lng.toFixed(5);
+    document.getElementById('aed-naselje').value = a.naselje || '';
+    document.getElementById('aed-label').value = a.label || '';
+    document.getElementById('aed-note').value = a.note || '';
+    document.getElementById('aed-naselje').style.borderColor = 'var(--border)';
+    document.getElementById('aed-label').style.borderColor = 'var(--border)';
+    document.getElementById('aed-last-inspection').textContent = a.lastInspection ? ('Zadnji pregled: ' + new Date(a.lastInspection).toLocaleString('sl-SI') + (a.lastInspectedBy ? ' · ' + a.lastInspectedBy : '')) : 'Še ni bilo pregledano.';
+    const aedHistCount = (a.inspections || []).length;
+    document.getElementById('aed-history-toggle').textContent = 'Zgodovina pregledov (' + aedHistCount + ')';
+    document.getElementById('aed-history-list').style.display = 'none';
+    document.getElementById('aed-history-list').innerHTML = '';
+    setAedToggleActive(pendingAedAvailable === true ? 'avail-true' : (pendingAedAvailable === false ? 'avail-false' : null));
+    setAedEditMode(false);
+    document.getElementById('aed-delete').style.display = isCurrentUserAdmin() ? '' : 'none';
+    document.getElementById('aed-modal-backdrop').style.display = 'flex';
+  }
+
+  function closeAedModal(){
+    document.getElementById('aed-modal-backdrop').style.display = 'none';
+    pendingAedLatLng = null;
+    editingAedId = null;
+    addModeActive = false;
+  }
+  document.getElementById('aed-cancel').addEventListener('click', closeAedModal);
+  document.getElementById('aed-edit').addEventListener('click', () => {
+    if(!requireLogin()) return;
+    setAedEditMode(true);
+  });
+  document.getElementById('aed-delete').addEventListener('click', () => {
+    if(!editingAedId) return;
+    const aedIdToDelete = editingAedId;
+    showConfirm('Ali res želiš trajno izbrisati ta AED iz baze? Tega dejanja ni mogoče razveljaviti.', async () => {
+      aeds = aeds.filter(x => x.id !== aedIdToDelete);
+      await deleteAedRow(aedIdToDelete);
+      renderAedMarkers();
+      closeAedModal();
+    }, 'Izbriši AED', 'Izbriši');
+  });
+  document.getElementById('aed-modal-backdrop').addEventListener('click', (e) => {
+    if(e.target.id === 'aed-modal-backdrop') closeAedModal();
+  });
+  document.getElementById('aed-history-toggle').addEventListener('click', () => {
+    const a = aeds.find(x => x.id === editingAedId);
+    if(!a) return;
+    const list = document.getElementById('aed-history-list');
+    if(list.style.display === 'none'){
+      const entries = (a.inspections || []).slice().reverse();
+      if(!entries.length){
+        list.innerHTML = '<div style="font-size:13px; color:var(--text-muted);">Še ni zabeleženih pregledov.</div>';
+      } else {
+        list.innerHTML = entries.map(e => {
+          const d = new Date(e.date).toLocaleString('sl-SI') + (e.by ? ' · ' + e.by : '');
+          const availText = e.available === true ? 'Na voljo' : (e.available === false ? 'Ni na voljo' : 'Ni preverjeno');
+          const availColor = e.available === true ? '#3DDC84' : (e.available === false ? '#D7263D' : '#9AA0A6');
+          return '<div style="display:flex; align-items:flex-start; padding:6px 0; border-bottom:1px solid var(--border); font-size:13px;">' +
+            '<span class="status-dot-inline" style="background:' + availColor + '; margin-top:5px;"></span>' +
+            '<div style="flex:1;"><div style="font-family:\'IBM Plex Mono\', monospace; font-size:12px; color:var(--text-muted);">' + d + '</div><div>' + availText + (e.note ? ' — ' + escapeHtml(e.note) : '') + '</div></div>' +
+            '</div>';
+        }).join('');
+      }
+      list.style.display = 'block';
+    } else {
+      list.style.display = 'none';
+    }
+  });
+  document.querySelectorAll('#aed-availability-toggle .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingAedAvailable = btn.dataset.kind === 'avail-true';
+      setAedToggleActive(btn.dataset.kind);
+    });
+  });
+  document.getElementById('aed-save').addEventListener('click', async () => {
+    const lat = parseFloat(document.getElementById('aed-lat').value);
+    const lng = parseFloat(document.getElementById('aed-lng').value);
+    if(isNaN(lat) || isNaN(lng)) return;
+    const naselje = document.getElementById('aed-naselje').value.trim();
+    const label = document.getElementById('aed-label').value.trim();
+    const note = document.getElementById('aed-note').value.trim();
+    const naseljeInput = document.getElementById('aed-naselje');
+    const labelInput = document.getElementById('aed-label');
+    naseljeInput.style.borderColor = naselje ? 'var(--border)' : 'var(--accent-red)';
+    labelInput.style.borderColor = label ? 'var(--border)' : 'var(--accent-red)';
+    if(!naselje || !label) return;
+
+    let savedAed;
+    if(editingAedId){
+      const a = aeds.find(x => x.id === editingAedId);
+      if(!a) return;
+      a.lat = lat; a.lng = lng; a.naselje = naselje; a.label = label; a.note = note;
+      a.available = pendingAedAvailable;
+      a.lastInspection = Date.now();
+      a.lastInspectedBy = currentUser;
+      a.inspections = a.inspections || [];
+      a.inspections.push({ date: a.lastInspection, available: pendingAedAvailable, note: note, by: currentUser });
+      savedAed = a;
+      await updateAedRow(savedAed);
+    } else {
+      savedAed = {
+        id: 'aed-' + Date.now(),
+        lat: lat, lng: lng, naselje: naselje, label: label, note: note,
+        available: pendingAedAvailable,
+        lastInspection: Date.now(),
+        lastInspectedBy: currentUser,
+        inspections: [{ date: Date.now(), available: pendingAedAvailable, note: note, by: currentUser }],
+        addedAt: Date.now()
+      };
+      aeds.push(savedAed);
+      await saveAed(savedAed);
+    }
+    renderAedMarkers();
+    closeAedModal();
+  });
+
+  document.getElementById('layer-hydrants').addEventListener('change', (e) => {
+    Object.values(markers).forEach(m => {
+      if(e.target.checked) m.addTo(map); else map.removeLayer(m);
+    });
+  });
+  document.getElementById('layer-aeds').addEventListener('change', (e) => {
+    Object.values(aedMarkers).forEach(m => {
+      if(e.target.checked) m.addTo(map); else map.removeLayer(m);
+    });
+  });
+
+  // Hydrant detail / status flow
+  let activeHydrantId = null;
+  let pendingWorking = null;
+  let pendingPressure = null;
+  let pendingTip = null;
+
+  function setToggleActive(groupId, kind){
+    document.querySelectorAll('#' + groupId + ' .toggle-btn').forEach(b => b.classList.remove('active'));
+    if(kind){
+      const btn = document.querySelector('#' + groupId + ' [data-kind="' + kind + '"]');
+      if(btn) btn.classList.add('active');
+    }
+  }
+
+  function setEditMode(active){
+    document.querySelectorAll('#working-toggle .toggle-btn, #pressure-toggle .toggle-btn, #detail-tip-toggle .toggle-btn').forEach(b => b.disabled = !active);
+    document.getElementById('detail-note').disabled = !active;
+    document.getElementById('detail-label').disabled = !active;
+    document.getElementById('detail-naselje').disabled = !active;
+    document.getElementById('detail-lat').disabled = !active;
+    document.getElementById('detail-lng').disabled = !active;
+    document.getElementById('detail-edit').style.display = active ? 'none' : '';
+    document.getElementById('detail-save').style.display = active ? '' : 'none';
+    document.getElementById('detail-unchanged').style.display = active ? 'none' : '';
+  }
+
+  function openDetailModal(id){
+    const h = hydrants.find(x => x.id === id);
+    if(!h) return;
+    activeHydrantId = id;
+    pendingWorking = (h.working === true || h.working === false) ? h.working : null;
+    pendingPressure = h.pressure || null;
+    document.getElementById('detail-title').textContent = h.label || 'Hidrant brez oznake';
+    document.getElementById('detail-lat').value = h.lat.toFixed(5);
+    document.getElementById('detail-lng').value = h.lng.toFixed(5);
+    document.getElementById('detail-label').value = h.label || '';
+    document.getElementById('detail-naselje').value = h.naselje || '';
+    document.getElementById('detail-note').value = h.note || '';
+    const histCount = (h.inspections || []).length;
+    document.getElementById('detail-history-toggle').textContent = 'Zgodovina pregledov (' + histCount + ')';
+    document.getElementById('detail-history-list').style.display = 'none';
+    document.getElementById('detail-history-list').innerHTML = '';
+    setToggleActive('working-toggle', pendingWorking === true ? 'working-true' : (pendingWorking === false ? 'working-false' : null));
+    setToggleActive('pressure-toggle', pendingPressure === 'good' ? 'pressure-good' : (pendingPressure === 'bad' ? 'pressure-bad' : null));
+    pendingTip = h.tip || null;
+    setToggleActive('detail-tip-toggle', pendingTip === 'nadzemni' ? 'tip-nadzemni' : (pendingTip === 'podzemni' ? 'tip-podzemni' : null));
+    setEditMode(false);
+    document.getElementById('detail-delete').style.display = isCurrentUserAdmin() ? '' : 'none';
+    document.getElementById('detail-backdrop').style.display = 'flex';
+  }
+
+  function closeDetailModal(){
+    document.getElementById('detail-backdrop').style.display = 'none';
+    activeHydrantId = null;
+  }
+
+  document.querySelectorAll('#working-toggle .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingWorking = btn.dataset.kind === 'working-true';
+      setToggleActive('working-toggle', btn.dataset.kind);
+    });
+  });
+  document.querySelectorAll('#pressure-toggle .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingPressure = btn.dataset.kind === 'pressure-good' ? 'good' : 'bad';
+      setToggleActive('pressure-toggle', btn.dataset.kind);
+    });
+  });
+  document.querySelectorAll('#detail-tip-toggle .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingTip = btn.dataset.kind === 'tip-nadzemni' ? 'nadzemni' : 'podzemni';
+      setToggleActive('detail-tip-toggle', btn.dataset.kind);
+    });
+  });
+
+  document.getElementById('detail-cancel').addEventListener('click', closeDetailModal);
+  document.getElementById('detail-edit').addEventListener('click', () => {
+    if(!requireLogin()) return;
+    setEditMode(true);
+  });
+  document.getElementById('detail-unchanged').addEventListener('click', () => {
+    if(!requireLogin()) return;
+    if(!activeHydrantId) return;
+    const h = hydrants.find(x => x.id === activeHydrantId);
+    if(!h) return;
+    showConfirm('Pregled opravljen na lokaciji "' + (h.label || 'brez oznake') + '". Stanje ostaja nespremenjeno.', async () => {
+      h.lastInspection = Date.now();
+      h.lastInspectedBy = currentUser;
+      h.inspections = h.inspections || [];
+      h.inspections.push({
+        date: h.lastInspection,
+        working: h.working,
+        pressure: h.pressure,
+        note: h.note,
+        by: currentUser
+      });
+      try{
+        await updateHydrantRow(h);
+      }catch(e){ /* keep local change even if save fails */ }
+      renderList();
+      document.getElementById('detail-history-toggle').textContent = 'Zgodovina pregledov (' + h.inspections.length + ')';
+      closeDetailModal();
+    }, 'Pregled opravljen', 'Potrdi');
+  });
+  document.getElementById('detail-delete').addEventListener('click', () => {
+    if(!activeHydrantId) return;
+    const hydrantIdToDelete = activeHydrantId;
+    showConfirm('Ali res želiš trajno izbrisati ta hidrant iz baze? Tega dejanja ni mogoče razveljaviti.', async () => {
+      hydrants = hydrants.filter(x => x.id !== hydrantIdToDelete);
+      await deleteHydrantRow(hydrantIdToDelete);
+      renderHydrantMarkers();
+      renderList();
+      closeDetailModal();
+    }, 'Izbriši hidrant', 'Izbriši');
+  });
+  document.getElementById('detail-history-toggle').addEventListener('click', () => {
+    const h = hydrants.find(x => x.id === activeHydrantId);
+    if(!h) return;
+    const list = document.getElementById('detail-history-list');
+    if(list.style.display === 'none'){
+      renderHistoryList(h);
+      list.style.display = 'block';
+    } else {
+      list.style.display = 'none';
+    }
+  });
+  function historyEntryColor(e){
+    if(e.working === false) return '#D7263D';
+    if(e.working === true && e.pressure === 'bad') return '#FFB100';
+    if(e.working === true && e.pressure === 'good') return '#3DDC84';
+    return '#9AA0A6';
+  }
+  function renderHistoryList(h){
+    const list = document.getElementById('detail-history-list');
+    const entries = (h.inspections || []).map((e, i) => ({ ...e, _idx: i })).reverse();
+    if(!entries.length){
+      list.innerHTML = '<div style="font-size:13px; color:var(--text-muted);">Še ni zabeleženih pregledov.</div>';
+      return;
+    }
+    list.innerHTML = entries.map(e => {
+      const d = new Date(e.date).toLocaleString('sl-SI') + (e.by ? ' · ' + e.by : '');
+      const parts = [];
+      if(e.working === true) parts.push('Deluje'); else if(e.working === false) parts.push('Ne deluje');
+      if(e.pressure === 'good') parts.push('Pritisk dober'); else if(e.pressure === 'bad') parts.push('Pritisk slab');
+      const summary = parts.length ? parts.join(' · ') : 'Brez stanja';
+      const delBtn = isCurrentUserAdmin() ? '<button class="history-delete-btn" data-idx="' + e._idx + '" style="background:none; border:none; color:var(--accent-red); font-size:12px; padding:0 0 0 10px; font-family:inherit;">Izbriši</button>' : '';
+      return '<div style="display:flex; align-items:flex-start; padding:6px 0; border-bottom:1px solid var(--border); font-size:13px;">' +
+        '<span class="status-dot-inline" style="background:' + historyEntryColor(e) + '; margin-top:5px;"></span>' +
+        '<div style="flex:1;"><div style="font-family:\'IBM Plex Mono\', monospace; font-size:12px; color:var(--text-muted);">' + d + '</div><div>' + summary + (e.note ? ' — ' + e.note : '') + '</div></div>' +
+        delBtn +
+        '</div>';
+    }).join('');
+    document.querySelectorAll('.history-delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx, 10);
+        showConfirm('Ali res želiš izbrisati ta zapis iz zgodovine pregledov?', async () => {
+          h.inspections.splice(idx, 1);
+          try{ await updateHydrantRow(h); }catch(e){}
+          document.getElementById('detail-history-toggle').textContent = 'Zgodovina pregledov (' + h.inspections.length + ')';
+          renderHistoryList(h);
+        }, 'Izbriši zapis', 'Izbriši');
+      });
+    });
+  }
+  document.getElementById('detail-backdrop').addEventListener('click', (e) => {
+    if(e.target.id === 'detail-backdrop') closeDetailModal();
+  });
+  document.getElementById('detail-save').addEventListener('click', async () => {
+    if(!activeHydrantId) return;
+    const h = hydrants.find(x => x.id === activeHydrantId);
+    if(!h) return;
+    const newLat = parseFloat(document.getElementById('detail-lat').value);
+    const newLng = parseFloat(document.getElementById('detail-lng').value);
+    if(!isNaN(newLat)) h.lat = newLat;
+    if(!isNaN(newLng)) h.lng = newLng;
+    h.label = document.getElementById('detail-label').value.trim();
+    h.naselje = document.getElementById('detail-naselje').value.trim();
+    h.tip = pendingTip;
+    h.note = document.getElementById('detail-note').value.trim();
+    h.working = pendingWorking;
+    h.pressure = pendingPressure;
+    h.updatedAt = Date.now();
+    h.lastInspection = Date.now();
+    h.lastInspectedBy = currentUser;
+    h.inspections = h.inspections || [];
+    h.inspections.push({
+      date: h.lastInspection,
+      working: pendingWorking,
+      pressure: pendingPressure,
+      note: h.note,
+      by: currentUser
+    });
+    try{
+      await updateHydrantRow(h);
+    }catch(e){ /* keep local change even if save fails */ }
+    renderHydrantMarkers();
+    renderList();
+    closeDetailModal();
+  });
+
+  function fmtDate(ts){
+    return ts ? new Date(ts).toLocaleString('sl-SI') : '';
+  }
+  function escapeHtml(v){
+    return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function downloadHtmlAsExcel(bodyHtml, filename){
+    const doc = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
+      '<head><meta charset="UTF-8"></head><body>' + bodyHtml + '</body></html>';
+    const blob = new Blob(['\ufeff', doc], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function legendTableHtml(rows){
+    let html = '<table cellpadding="5" style="font-family:Calibri,Arial,sans-serif; font-size:12px; margin-top:10px;">';
+    html += '<tr><td colspan="2" style="font-weight:bold;">Legenda</td></tr>';
+    rows.forEach(([color, text]) => {
+      html += '<tr><td style="background:' + color + '; width:18px; border:1px solid #999;">&nbsp;</td><td>' + escapeHtml(text) + '</td></tr>';
+    });
+    html += '</table>';
+    return html;
+  }
+
+  function exportHydrantsExcel(areasFilter, title){
+    const source = areasFilter ? hydrants.filter(h => areasFilter.includes(h.naselje || 'Brez naselja')) : hydrants;
+    const headers = ['Naselje', 'Oznaka', 'Vrsta', 'Zemljepisna širina', 'Zemljepisna dolžina', 'Delovanje', 'Pritisk', 'Opis stanja', 'Datum zadnjega pregleda'];
+
+    let html = '<h2 style="font-family:Calibri,Arial,sans-serif;">' + escapeHtml(title || 'Poročilo o hidrantih') + '</h2>';
+    html += '<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse; font-family:Calibri,Arial,sans-serif; font-size:12px; vertical-align:top;">';
+    html += '<tr>' + headers.map(h => '<th style="background:#262B30; color:#ffffff; padding:6px; vertical-align:top;">' + escapeHtml(h) + '</th>').join('') + '</tr>';
+    source.forEach(h => {
+      const color = statusColor(h);
+      const textColor = h.working === false ? '#ffffff' : '#000000';
+      const cells = [
+        h.naselje || 'Brez naselja',
+        h.label || 'Brez oznake',
+        h.tip === 'nadzemni' ? 'Nadzemni' : (h.tip === 'podzemni' ? 'Podzemni' : ''),
+        h.lat,
+        h.lng
+      ].map(v => '<td style="vertical-align:top;">' + escapeHtml(v) + '</td>').join('');
+      const workingCell = '<td style="background:' + color + '; color:' + textColor + '; vertical-align:top;">' + escapeHtml(h.working === true ? 'Deluje' : (h.working === false ? 'Ne deluje' : 'Ni preverjeno')) + '</td>';
+      const restCells = [
+        h.pressure === 'good' ? 'Dober' : (h.pressure === 'bad' ? 'Slab' : ''),
+        h.note || '',
+        fmtDate(h.lastInspection)
+      ].map(v => '<td style="vertical-align:top;">' + escapeHtml(v) + '</td>').join('');
+      html += '<tr>' + cells + workingCell + restCells + '</tr>';
+    });
+    html += '</table>';
+    html += legendTableHtml([
+      ['#3DDC84', 'Deluje, dober pritisk'],
+      ['#FFB100', 'Deluje, slab pritisk'],
+      ['#D7263D', 'Ne deluje'],
+      ['#9AA0A6', 'Ni preverjeno']
+    ]);
+    downloadHtmlAsExcel(html, 'hidranti-porocilo.xls');
+  }
+
+  function exportAedExcel(title){
+    const headers = ['Naselje', 'Oznaka', 'Razpoložljivost', 'Opis stanja', 'Zemljepisna širina', 'Zemljepisna dolžina', 'Datum zadnjega pregleda'];
+
+    let html = '<h2 style="font-family:Calibri,Arial,sans-serif;">' + escapeHtml(title || 'Poročilo o AED napravah') + '</h2>';
+    html += '<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse; font-family:Calibri,Arial,sans-serif; font-size:12px; vertical-align:top;">';
+    html += '<tr>' + headers.map(h => '<th style="background:#262B30; color:#ffffff; padding:6px; vertical-align:top;">' + escapeHtml(h) + '</th>').join('') + '</tr>';
+    aeds.forEach(a => {
+      const availColor = a.available === true ? '#3DDC84' : (a.available === false ? '#D7263D' : '#9AA0A6');
+      const textColor = a.available === false ? '#ffffff' : '#000000';
+      const cells = [
+        a.naselje || 'Brez naselja',
+        a.label || 'Brez oznake'
+      ].map(v => '<td style="vertical-align:top;">' + escapeHtml(v) + '</td>').join('');
+      const availCell = '<td style="background:' + availColor + '; color:' + textColor + '; vertical-align:top;">' + escapeHtml(a.available === true ? 'Na voljo' : (a.available === false ? 'Ni na voljo' : 'Ni preverjeno')) + '</td>';
+      const restCells = [
+        a.note || '',
+        a.lat,
+        a.lng,
+        fmtDate(a.lastInspection)
+      ].map(v => '<td style="vertical-align:top;">' + escapeHtml(v) + '</td>').join('');
+      html += '<tr>' + cells + availCell + restCells + '</tr>';
+    });
+    html += '</table>';
+    html += legendTableHtml([
+      ['#3DDC84', 'Na voljo'],
+      ['#D7263D', 'Ni na voljo'],
+      ['#9AA0A6', 'Ni preverjeno']
+    ]);
+    downloadHtmlAsExcel(html, 'aed-porocilo.xls');
+  }
+
+  function exportMapPdf(areasFilter, title){
+    const source = areasFilter ? hydrants.filter(h => areasFilter.includes(h.naselje || 'Brez naselja')) : hydrants;
+    if(!source.length){
+      showConfirm('Za izbrana naselja ni hidrantov, zato zemljevida ni mogoče izvoziti.', () => {}, 'Ni podatkov', 'V redu');
+      return;
+    }
+    const groups = {};
+    source.forEach(h => {
+      const key = h.naselje || 'Brez naselja';
+      (groups[key] = groups[key] || []).push({ lat: h.lat, lng: h.lng, color: statusColor(h), label: h.label || 'Brez oznake' });
+    });
+    const naseljaNames = Object.keys(groups).sort();
+    const safeTitle = escapeHtml(title || 'Zemljevid hidrantov');
+    let pagesHtml = '';
+    let initScript = '';
+    naseljaNames.forEach((naselje, idx) => {
+      const mapId = 'map-' + idx;
+      pagesHtml += '<div class="page"' + (idx < naseljaNames.length - 1 ? ' style="page-break-after:always;"' : '') + '>' +
+        '<div class="page-title">' + safeTitle + ' — ' + escapeHtml(naselje) + '</div>' +
+        '<div id="' + mapId + '" class="map-box"></div>' +
+        '<div class="legend">' +
+        '<span><i style="background:#3DDC84;"></i>Deluje, dober pritisk</span>' +
+        '<span><i style="background:#FFB100;"></i>Deluje, slab pritisk</span>' +
+        '<span><i style="background:#D7263D;"></i>Ne deluje</span>' +
+        '<span><i style="background:#9AA0A6;"></i>Ni preverjeno</span>' +
+        '</div>' +
+        '</div>';
+      initScript += 'initMap("' + mapId + '", ' + JSON.stringify(groups[naselje]) + ');';
+    });
+    const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + safeTitle + '</title>' +
+      '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />' +
+      '<style>' +
+      'body{font-family:Arial,Calibri,sans-serif;margin:0;color:#111;}' +
+      '.page{padding:24px;box-sizing:border-box;}' +
+      '.page-title{font-size:20px;font-weight:bold;margin-bottom:14px;}' +
+      '.map-box{width:100%;max-width:1000px;height:520px;border:1px solid #999;}' +
+      '.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:13px;}' +
+      '.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:middle;border:1px solid #333;}' +
+      '#printbar{position:sticky;top:0;background:#222;color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;font-size:14px;z-index:1000;}' +
+      '#printbar button{background:#fff;color:#111;border:none;padding:10px 18px;border-radius:6px;font-size:14px;font-weight:bold;}' +
+      '@media print{ #printbar{display:none;} .map-box{height:480px;} }' +
+      '@page{ size:A4 landscape; margin:10mm; }' +
+      '.hy-label{font-weight:600;font-size:12px;background:rgba(255,255,255,0.9);padding:1px 5px;border-radius:3px;border:1px solid #999;}' +
+      '</style></head><body>' +
+      '<div id="printbar"><span>Za PDF: pritisni spodnji gumb, nato izberi "Shrani kot PDF" (Save as PDF)</span><button onclick="window.print()">🖨 Natisni / Shrani kot PDF</button></div>' +
+      pagesHtml +
+      '<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"><\/script>' +
+      '<script>' +
+      'function initMap(id, points){' +
+      '  var map = L.map(id);' +
+      '  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom:19, attribution:"&copy; OpenStreetMap" }).addTo(map);' +
+      '  points.forEach(function(p){' +
+      '    L.circleMarker([p.lat, p.lng], { radius:9, fillColor:p.color, color:"#222", weight:2, fillOpacity:1 })' +
+      '      .bindTooltip(p.label, {permanent:true, direction:"top", offset:[0,-8], className:"hy-label"})' +
+      '      .addTo(map);' +
+      '  });' +
+      '  var bounds = L.latLngBounds(points.map(function(p){ return [p.lat, p.lng]; }));' +
+      '  map.fitBounds(bounds.pad(0.25));' +
+      '  setTimeout(function(){ map.invalidateSize(); }, 200);' +
+      '}' +
+      initScript +
+      '<\/script>' +
+      '</body></html>';
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hidranti-zemljevid-po-naseljih.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportFullBackup(){
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      hydrants: hydrants,
+      aeds: aeds
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hidranti-varnostna-kopija-' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Admin access (soft gate only - visible in page source, meant to keep casual users out, not real security)
+  const ADMIN_PIN = 'PGD2026';
+
+  let confirmCallback = null;
+  function showConfirm(message, onConfirm, title, confirmLabel){
+    document.getElementById('confirm-title').textContent = title || 'Potrditev';
+    document.getElementById('confirm-message').textContent = message;
+    document.getElementById('confirm-ok').textContent = confirmLabel || 'Potrdi';
+    confirmCallback = onConfirm;
+    document.getElementById('confirm-backdrop').style.display = 'flex';
+  }
+  document.getElementById('confirm-cancel').addEventListener('click', () => {
+    document.getElementById('confirm-backdrop').style.display = 'none';
+    confirmCallback = null;
+  });
+  document.getElementById('confirm-ok').addEventListener('click', async () => {
+    document.getElementById('confirm-backdrop').style.display = 'none';
+    const cb = confirmCallback;
+    confirmCallback = null;
+    if(cb) await cb();
+  });
+
+  let promptCallback = null;
+  function showPrompt(title, defaultValue, onConfirm){
+    document.getElementById('prompt-title').textContent = title || 'Naslov';
+    document.getElementById('prompt-input').value = defaultValue || '';
+    promptCallback = onConfirm;
+    document.getElementById('prompt-backdrop').style.display = 'flex';
+  }
+  document.getElementById('prompt-cancel').addEventListener('click', () => {
+    document.getElementById('prompt-backdrop').style.display = 'none';
+    promptCallback = null;
+  });
+  document.getElementById('prompt-ok').addEventListener('click', async () => {
+    const val = document.getElementById('prompt-input').value;
+    document.getElementById('prompt-backdrop').style.display = 'none';
+    const cb = promptCallback;
+    promptCallback = null;
+    if(cb) await cb(val);
+  });
+
+  function renderAdminAreaList(){
+    const areas = Array.from(new Set(hydrants.map(h => h.naselje || 'Brez naselja'))).sort();
+    const container = document.getElementById('admin-area-list');
+    container.innerHTML =
+      '<div style="display:flex; gap:8px; margin-bottom:8px;">' +
+      '<button id="admin-area-select-all" style="flex:1; background:none; border:1px solid var(--border); color:var(--text-primary); padding:6px; border-radius:6px; font-size:12px; font-family:inherit;">Izberi vse</button>' +
+      '<button id="admin-area-select-none" style="flex:1; background:none; border:1px solid var(--border); color:var(--text-primary); padding:6px; border-radius:6px; font-size:12px; font-family:inherit;">Počisti vse</button>' +
+      '</div>' +
+      '<div style="display:grid; grid-template-columns:1fr 1fr; gap:2px 10px;">' +
+      areas.map(a =>
+        '<label style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; min-width:0;">' +
+        '<input type="checkbox" class="admin-area-checkbox" value="' + a.replace(/"/g, '&quot;') + '" checked style="width:16px; height:16px; flex-shrink:0;">' +
+        '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + a + '</span></label>'
+      ).join('') +
+      '</div>';
+    document.getElementById('admin-area-select-all').addEventListener('click', () => {
+      document.querySelectorAll('.admin-area-checkbox').forEach(c => c.checked = true);
+    });
+    document.getElementById('admin-area-select-none').addEventListener('click', () => {
+      document.querySelectorAll('.admin-area-checkbox').forEach(c => c.checked = false);
+    });
+  }
+
+  function renderAdminUsersList(){
+    document.getElementById('admin-users-toggle').textContent = 'Uporabniki (' + users.length + ')';
+    const container = document.getElementById('admin-users-list');
+    if(!users.length){
+      container.innerHTML = '<div style="font-size:13px; color:var(--text-muted); padding:6px 0;">Ni še registriranih uporabnikov.</div>';
+      return;
+    }
+    container.innerHTML = users.map(u =>
+      '<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;">' +
+      '<div><div>' + escapeHtml(u.username) + (u.isAdmin ? ' <span style="color:var(--accent-amber); font-size:11px;">(administrator)</span>' : '') + '</div><div style="font-size:11px; color:var(--text-muted); font-family:\'IBM Plex Mono\', monospace;">geslo: ' + escapeHtml(u.password) + '</div></div>' +
+      '<div style="display:flex; gap:10px; flex-shrink:0;">' +
+      '<button class="admin-user-toggle-admin" data-username="' + escapeHtml(u.username) + '" style="background:none; border:none; color:var(--text-muted); font-size:12px; font-family:inherit;">' + (u.isAdmin ? 'Odvzemi admin' : 'Naredi admin') + '</button>' +
+      '<button class="admin-user-delete" data-username="' + escapeHtml(u.username) + '" style="background:none; border:none; color:var(--accent-red); font-size:12px; font-family:inherit;">Izbriši</button>' +
+      '</div>' +
+      '</div>'
+    ).join('');
+    document.querySelectorAll('.admin-user-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const uname = btn.dataset.username;
+        showConfirm('Ali res želiš izbrisati uporabnika "' + uname + '"?', async () => {
+          users = users.filter(u => u.username !== uname);
+          await deleteUserRow(uname);
+          renderAdminUsersList();
+        }, 'Izbriši uporabnika', 'Izbriši');
+      });
+    });
+    document.querySelectorAll('.admin-user-toggle-admin').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const uname = btn.dataset.username;
+        const u = users.find(x => x.username === uname);
+        if(!u) return;
+        const grant = !u.isAdmin;
+        showConfirm(grant ? ('Ali želiš uporabniku "' + uname + '" podeliti administratorske pravice?') : ('Ali želiš uporabniku "' + uname + '" odvzeti administratorske pravice?'), async () => {
+          u.isAdmin = grant;
+          await updateUserRow(u);
+          renderAdminUsersList();
+        }, grant ? 'Podeli administratorske pravice' : 'Odvzemi administratorske pravice', 'Potrdi');
+      });
+    });
+  }
+  document.getElementById('admin-bulk-toggle').addEventListener('click', () => {
+    const section = document.getElementById('admin-bulk-section');
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+  });
+  let bulkAddType = 'hydrant';
+  document.querySelectorAll('#bulk-type-toggle .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#bulk-type-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      bulkAddType = btn.dataset.kind === 'bulk-aed' ? 'aed' : 'hydrant';
+      const help = document.getElementById('admin-bulk-help');
+      const input = document.getElementById('admin-bulk-input');
+      if(bulkAddType === 'aed'){
+        help.innerHTML = 'Ena vrstica na AED, v obliki: <br><span style="font-family:\'IBM Plex Mono\', monospace;">naselje, oznaka, širina, dolžina</span>';
+        input.placeholder = 'Kidričevo, Vhod v Dom kulture, 46.38490, 15.78810\nStrnišče, Trgovina, 46.40162, 15.77779';
+      } else {
+        help.innerHTML = 'Ena vrstica na hidrant, v obliki: <br><span style="font-family:\'IBM Plex Mono\', monospace;">naselje, oznaka, širina, dolžina, vrsta</span><br>(vrsta je neobvezna: nadzemni/podzemni)';
+        input.placeholder = 'Kidričevo, Cesta XY, 46.38490, 15.78810, nadzemni\nStrnišče, Ob mostu, 46.40162, 15.77779';
+      }
+    });
+  });
+  document.getElementById('admin-bulk-add').addEventListener('click', async () => {
+    const raw = document.getElementById('admin-bulk-input').value;
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length);
+    let added = 0;
+    const skipped = [];
+
+    if(bulkAddType === 'aed'){
+      const newAeds = [];
+      lines.forEach(line => {
+        const parts = line.split(',').map(p => p.trim());
+        const naselje = parts[0] || '';
+        const label = parts[1] || '';
+        const lat = parseFloat(parts[2]);
+        const lng = parseFloat(parts[3]);
+        if(!naselje || !label || isNaN(lat) || isNaN(lng)){
+          skipped.push(line);
+          return;
+        }
+        const a = {
+          id: 'aed-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
+          lat: lat, lng: lng, label: label, naselje: naselje, note: '',
+          available: null, addedAt: Date.now()
+        };
+        aeds.push(a);
+        newAeds.push(a);
+        added++;
+      });
+      if(added){
+        try{ await sb.from('aeds').insert(newAeds.map(aedToRow)); }catch(e){}
+        renderAedMarkers();
+      }
+    } else {
+      const newHydrants = [];
+      lines.forEach(line => {
+        const parts = line.split(',').map(p => p.trim());
+        const naselje = parts[0] || '';
+        const label = parts[1] || '';
+        const lat = parseFloat(parts[2]);
+        const lng = parseFloat(parts[3]);
+        let tip = (parts[4] || '').toLowerCase();
+        if(tip !== 'nadzemni' && tip !== 'podzemni') tip = null;
+        if(!naselje || !label || isNaN(lat) || isNaN(lng)){
+          skipped.push(line);
+          return;
+        }
+        const h = {
+          id: 'h-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
+          lat: lat, lng: lng, label: label, naselje: naselje, tip: tip,
+          addedAt: Date.now()
+        };
+        hydrants.push(h);
+        newHydrants.push(h);
+        added++;
+      });
+      if(added){
+        try{ await sb.from('hydrants').insert(newHydrants.map(hydrantToRow)); }catch(e){}
+        renderHydrantMarkers();
+        renderList();
+        renderAdminAreaList();
+      }
+    }
+
+    const resultEl = document.getElementById('admin-bulk-result');
+    resultEl.innerHTML = skipped.length ? ('Preskočenih (napačna oblika vrstice): ' + skipped.length + '<br><span style="font-family:\'IBM Plex Mono\', monospace; font-size:11px;">' + skipped.map(escapeHtml).join('<br>') + '</span>') : '';
+    if(added){
+      document.getElementById('admin-bulk-input').value = '';
+      const kind = bulkAddType === 'aed' ? 'AED naprav' : 'hidrantov';
+      showConfirm('Vseh ' + added + ' ' + kind + ' je uspešno dodanih.' + (skipped.length ? (' (' + skipped.length + ' vrstic je bilo preskočenih zaradi napačne oblike.)') : ''), () => {}, 'Dodajanje končano', 'V redu');
+    }
+  });
+
+  document.getElementById('admin-users-toggle').addEventListener('click', () => {
+    const list = document.getElementById('admin-users-list');
+    if(list.style.display === 'none'){
+      renderAdminUsersList();
+      list.style.display = 'block';
+    } else {
+      list.style.display = 'none';
+    }
+  });
+
+  function isCurrentUserAdmin(){
+    if(!currentUser) return false;
+    const u = users.find(x => x.username === currentUser);
+    return !!(u && u.isAdmin);
+  }
+
+  document.getElementById('admin-link').addEventListener('click', () => {
+    if(!requireLogin()) return;
+    document.getElementById('admin-pin-input').value = '';
+    document.getElementById('admin-pin-error').style.display = 'none';
+    if(isCurrentUserAdmin()){
+      renderAdminAreaList();
+      document.getElementById('admin-users-toggle').textContent = 'Uporabniki (' + users.length + ')';
+      document.getElementById('admin-users-list').style.display = 'none';
+      document.getElementById('admin-pin-section').style.display = 'none';
+      document.getElementById('admin-panel-section').style.display = '';
+    } else {
+      document.getElementById('admin-pin-section').style.display = '';
+      document.getElementById('admin-panel-section').style.display = 'none';
+    }
+    document.getElementById('admin-backdrop').style.display = 'flex';
+  });
+  document.getElementById('admin-cancel').addEventListener('click', () => {
+    document.getElementById('admin-backdrop').style.display = 'none';
+  });
+  document.getElementById('admin-close').addEventListener('click', () => {
+    document.getElementById('admin-backdrop').style.display = 'none';
+  });
+  document.getElementById('admin-unlock').addEventListener('click', async () => {
+    const val = document.getElementById('admin-pin-input').value;
+    if(val === ADMIN_PIN){
+      const u = users.find(x => x.username === currentUser);
+      if(u){
+        u.isAdmin = true;
+        await updateUserRow(u);
+      }
+      renderAdminAreaList();
+      document.getElementById('admin-users-toggle').textContent = 'Uporabniki (' + users.length + ')';
+      document.getElementById('admin-users-list').style.display = 'none';
+      document.getElementById('admin-pin-section').style.display = 'none';
+      document.getElementById('admin-panel-section').style.display = '';
+    } else {
+      document.getElementById('admin-pin-error').style.display = 'block';
+    }
+  });
+  document.getElementById('admin-export').addEventListener('click', () => {
+    const checked = Array.from(document.querySelectorAll('.admin-area-checkbox:checked')).map(c => c.value);
+    showPrompt('Naslov poročila (hidranti)', 'Poročilo o hidrantih', (title) => {
+      exportHydrantsExcel(checked, title);
+    });
+  });
+  document.getElementById('admin-export-aed').addEventListener('click', () => {
+    showPrompt('Naslov poročila (AED)', 'Poročilo o AED napravah', (title) => {
+      exportAedExcel(title);
+    });
+  });
+  document.getElementById('admin-export-map').addEventListener('click', () => {
+    const checked = Array.from(document.querySelectorAll('.admin-area-checkbox:checked')).map(c => c.value);
+    showPrompt('Naslov zemljevida', 'Zemljevid hidrantov', (title) => {
+      exportMapPdf(checked, title);
+    });
+  });
+  document.getElementById('admin-backup').addEventListener('click', () => {
+    exportFullBackup();
+  });
+
+  // init
+  loadHydrants();
+  loadAeds();
+  loadUsers();
+  updateLoginUI();
+  requestGeolocation();
+
+ } catch(e) {
+   var el = document.createElement('div');
+   el.style.cssText = 'background:#5a1420;color:#fff;padding:14px;font-family:monospace;font-size:12px;position:fixed;top:0;left:0;right:0;z-index:9999;white-space:pre-wrap;';
+   el.textContent = 'JS napaka (init): ' + (e && e.message ? e.message : e);
+   document.body.appendChild(el);
+ }
+})();
+</script>
+</body>
+</html>
