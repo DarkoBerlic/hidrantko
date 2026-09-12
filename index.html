@@ -704,6 +704,16 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
 
+  function fixMapSize(){ map.resize(); }
+  map.on('load', fixMapSize);
+  window.addEventListener('resize', fixMapSize);
+  window.addEventListener('orientationchange', fixMapSize);
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', fixMapSize);
+  }
+  setTimeout(fixMapSize, 300);
+  setTimeout(fixMapSize, 1000);
+
   function statusColor(h){
     if(h.working === false) return '#D7263D';
     if(h.working === true && h.pressure === 'bad') return '#FFB100';
@@ -979,6 +989,15 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
 
   let geoWatchId = null;
   let firstFixDone = false;
+  let followMode = true;
+  let updatesSincePause = 0;
+
+  map.on('dragstart', (e) => {
+    if(e.originalEvent){ followMode = false; updatesSincePause = 0; }
+  });
+  map.on('zoomstart', (e) => {
+    if(e.originalEvent){ followMode = false; updatesSincePause = 0; }
+  });
 
   function requestGeolocation(){
     setStatus('Iščem lokacijo …', false);
@@ -1009,8 +1028,15 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
         if(!firstFixDone){
           firstFixDone = true;
           map.jumpTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 17 });
-        } else {
+        } else if(followMode){
           map.panTo([pos.coords.longitude, pos.coords.latitude], { animate: true });
+        } else {
+          updatesSincePause++;
+          if(updatesSincePause >= 3){
+            followMode = true;
+            updatesSincePause = 0;
+            map.panTo([pos.coords.longitude, pos.coords.latitude], { animate: true });
+          }
         }
         onLocationSuccess(pos.coords.latitude, pos.coords.longitude, true);
       },
