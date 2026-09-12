@@ -2031,7 +2031,7 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
     if(!requireLogin()) return;
     document.getElementById('admin-pin-input').value = '';
     document.getElementById('admin-pin-error').style.display = 'none';
-    if(isCurrentUserAdmin()){
+    if(isCurrentUserAdmin() && cachedAdminPin){
       renderAdminAreaList();
       document.getElementById('admin-users-toggle').textContent = 'Uporabniki (' + users.length + ')';
       document.getElementById('admin-users-list').style.display = 'none';
