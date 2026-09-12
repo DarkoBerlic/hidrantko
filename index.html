@@ -604,6 +604,10 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
           </div>
         </div>
         <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Dodeli oznake (A-0001, A-0002 ...) hidrantom, ki jih še nimajo - uporabno za izpis zemljevida, da se imena ne prekrivajo</div>
+          <button class="btn-cancel" id="admin-assign-codes" style="width:100%;">Dodeli manjkajoče oznake</button>
+        </div>
+        <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
           <div id="admin-users-toggle" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Uporabniki (0)</div>
           <div id="admin-users-list" style="display:none; max-height:26vh; overflow-y:auto; margin-bottom:12px;"></div>
         </div>
@@ -644,7 +648,7 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
       pressure: h.pressure || null, note: h.note || null,
       added_at: h.addedAt || null, updated_at: h.updatedAt || null,
       last_inspection: h.lastInspection || null, last_inspected_by: h.lastInspectedBy || null,
-      inspections: h.inspections || []
+      inspections: h.inspections || [], code: h.code || null
     };
   }
   function rowToHydrant(r){
@@ -653,7 +657,7 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
       working: r.working, pressure: r.pressure, note: r.note,
       addedAt: r.added_at, updatedAt: r.updated_at,
       lastInspection: r.last_inspection, lastInspectedBy: r.last_inspected_by,
-      inspections: r.inspections || []
+      inspections: r.inspections || [], code: r.code || null
     };
   }
   function aedToRow(a){
@@ -810,7 +814,19 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
     showConfirm('Napaka pri shranjevanju v bazo (' + context + '): ' + (error.message || JSON.stringify(error)), () => {}, 'Napaka baze', 'V redu');
   }
 
+  function nextHydrantCode(){
+    let maxN = 0;
+    hydrants.forEach(h => {
+      if(h.code){
+        const m = /^A-(\d+)$/.exec(h.code);
+        if(m) maxN = Math.max(maxN, parseInt(m[1], 10));
+      }
+    });
+    return 'A-' + String(maxN + 1).padStart(4, '0');
+  }
+
   async function saveHydrant(h){
+    if(!h.code) h.code = nextHydrantCode();
     hydrants.push(h);
     const { error } = await sb.from('hydrants').insert([hydrantToRow(h)]);
     reportDbError('dodajanje hidranta', error);
@@ -906,15 +922,19 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
     const nearest = ranked[0];
     const rest = ranked.slice(1);
 
+    function hoseCount(distMeters){
+      return Math.ceil(distMeters / 20) + 1;
+    }
+
     let html = '';
     html += '<div id="nearest-hero">';
-    html += '<div><span class="num">' + Math.round(nearest.dist) + '</span><span class="unit"> m</span></div>';
+    html += '<div><span class="num">' + Math.round(nearest.dist) + '</span><span class="unit"> m</span><div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Do hidranta ' + hoseCount(nearest.dist) + ' cevi (vklj. rezervna)</div></div>';
     html += '<div class="meta"><div class="label"><span class="status-dot-inline" style="background:' + statusColor(nearest) + '"></span>' + (nearest.label || 'Brez oznake') + '</div><div class="sub">' + statusSummary(nearest) + '</div></div>';
     html += '</div>';
     html += '<div id="list">';
     rest.forEach((h, i) => {
       const typeTag = h.tip ? ' <span style="color:var(--text-muted); font-size:12px;">(' + (h.tip === 'nadzemni' ? 'nadzemni' : 'podzemni') + ')</span>' : '';
-      html += '<div class="row"><span class="rank">' + (i+2) + '</span><span class="status-dot-inline" style="background:' + statusColor(h) + '"></span><span class="label">' + (h.label || 'Brez oznake') + typeTag + '</span><span class="dist">' + Math.round(h.dist) + ' m</span></div>';
+      html += '<div class="row"><span class="rank">' + (i+2) + '</span><span class="status-dot-inline" style="background:' + statusColor(h) + '"></span><span class="label">' + (h.label || 'Brez oznake') + typeTag + '</span><span class="dist">' + Math.round(h.dist) + ' m<span style="display:block; font-size:11px; color:var(--text-muted); font-weight:400; text-align:right;">' + hoseCount(h.dist) + ' cevi</span></span></div>';
     });
     html += '</div>';
     document.getElementById('sheet-body').innerHTML = html;
@@ -986,6 +1006,8 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
         if(!firstFixDone){
           firstFixDone = true;
           map.setView([pos.coords.latitude, pos.coords.longitude], 17);
+        } else {
+          map.panTo([pos.coords.latitude, pos.coords.longitude], { animate: true });
         }
         onLocationSuccess(pos.coords.latitude, pos.coords.longitude, true);
       },
@@ -1429,7 +1451,7 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
     activeHydrantId = id;
     pendingWorking = (h.working === true || h.working === false) ? h.working : null;
     pendingPressure = h.pressure || null;
-    document.getElementById('detail-title').textContent = h.label || 'Hidrant brez oznake';
+    document.getElementById('detail-title').textContent = (h.label || 'Hidrant brez oznake') + (h.code ? '  (' + h.code + ')' : '');
     document.getElementById('detail-lat').value = h.lat.toFixed(5);
     document.getElementById('detail-lng').value = h.lng.toFixed(5);
     document.getElementById('detail-label').value = h.label || '';
@@ -1628,7 +1650,7 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
 
   function exportHydrantsExcel(areasFilter, title){
     const source = areasFilter ? hydrants.filter(h => areasFilter.includes(h.naselje || 'Brez naselja')) : hydrants;
-    const headers = ['Naselje', 'Oznaka', 'Vrsta', 'Zemljepisna širina', 'Zemljepisna dolžina', 'Delovanje', 'Pritisk', 'Opis stanja', 'Datum zadnjega pregleda'];
+    const headers = ['Koda', 'Naselje', 'Oznaka', 'Vrsta', 'Zemljepisna širina', 'Zemljepisna dolžina', 'Delovanje', 'Pritisk', 'Opis stanja', 'Datum zadnjega pregleda'];
 
     let html = '<h2 style="font-family:Calibri,Arial,sans-serif;">' + escapeHtml(title || 'Poročilo o hidrantih') + '</h2>';
     html += '<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse; font-family:Calibri,Arial,sans-serif; font-size:12px; vertical-align:top;">';
@@ -1637,6 +1659,7 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
       const color = statusColor(h);
       const textColor = h.working === false ? '#ffffff' : '#000000';
       const cells = [
+        h.code || '',
         h.naselje || 'Brez naselja',
         h.label || 'Brez oznake',
         h.tip === 'nadzemni' ? 'Nadzemni' : (h.tip === 'podzemni' ? 'Podzemni' : ''),
@@ -1701,7 +1724,7 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
     const groups = {};
     source.forEach(h => {
       const key = h.naselje || 'Brez naselja';
-      (groups[key] = groups[key] || []).push({ lat: h.lat, lng: h.lng, color: statusColor(h), label: h.label || 'Brez oznake' });
+      (groups[key] = groups[key] || []).push({ lat: h.lat, lng: h.lng, color: statusColor(h), label: h.code || '?' });
     });
     const naseljaNames = Object.keys(groups).sort();
     const safeTitle = escapeHtml(title || 'Zemljevid hidrantov');
@@ -1964,6 +1987,7 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
         const h = {
           id: 'h-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
           lat: lat, lng: lng, label: label, naselje: naselje, tip: tip,
+          code: nextHydrantCode(),
           addedAt: Date.now()
         };
         hydrants.push(h);
@@ -2060,6 +2084,20 @@ Strnišče, Ob mostu, 46.40162, 15.77779" style="width:100%; background:var(--su
   });
   document.getElementById('admin-backup').addEventListener('click', () => {
     exportFullBackup();
+  });
+  document.getElementById('admin-assign-codes').addEventListener('click', () => {
+    const missing = hydrants.filter(h => !h.code).sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+    if(!missing.length){
+      showConfirm('Vsi hidranti že imajo dodeljeno oznako.', () => {}, 'Ni potrebno', 'V redu');
+      return;
+    }
+    showConfirm('Dodeliti oznake ' + missing.length + ' hidrantom, ki jih še nimajo? Vrstni red bo po datumu dodajanja.', async () => {
+      for(const h of missing){
+        h.code = nextHydrantCode();
+        await updateHydrantRow(h);
+      }
+      showConfirm('Dodeljenih ' + missing.length + ' oznak.', () => {}, 'Končano', 'V redu');
+    }, 'Dodeli oznake', 'Dodeli');
   });
 
   // init
